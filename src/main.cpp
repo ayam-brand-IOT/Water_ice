@@ -21,15 +21,12 @@ void loop() {
   switch (current_state) {
     case IDLE:
       handleIDLE();
-      // Serial.println("IDLE");
       break;
     case ICE_FILLING:
       handleIceFilling();
-      // Serial.println("ICE_FILLING");
       break;
     case WATER_FILLING:
       handleWaterFilling();
-      // Serial.println("WATER_FILLING");
       break;
     default:
       break;
