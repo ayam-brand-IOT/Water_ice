@@ -1,11 +1,17 @@
 #include "Controller.h"
 
-ModbusDevice scaime(SCAIME_NUM_VALUES, DEVICE_BAUDRATE, SCAIME_FIRST_REGISTER);
+byte mac[] = MAC_ADDRESS;
+IPAddress ip(IP_ADDRESS);
+IPAddress gateway(GATEWAY_ADDRESS);
+IPAddress subnet(SUBNET_ADDRESS);
+
+MarelClient marel(SERVER_IP, SERVER_PORT, mac, ip, gateway, subnet);
+
 
 void Controller::init(){
     setUpIOS();
     // setUpI2C();
-    setUpModbusDevices();
+    setUpDevice();
     // setUpRTC();
 }
 
@@ -28,8 +34,8 @@ ControllerState Controller::getState(){
     return this->state;
 }
 
-void Controller::setUpModbusDevices(){
-    scaime.init();
+void Controller::setUpDevice(){
+    marel.begin();
 }
 
 void Controller::setUpDigitalInputs(){

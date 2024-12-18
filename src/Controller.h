@@ -2,13 +2,13 @@
 #define CONTROLLER_H
 
 #include <FS.h>
-#include <WS_V2.h>
 #include "config.h"
 #include <SPIFFS.h>
 #include <Button.h>
 #include <Arduino.h>
+#include "marel.h"
 #include <Preferences.h>
-#include "ModbusDevice.h"
+#include "EdgeBox_ESP_100.h"
 
 enum ControllerState {
     IDLE,
@@ -29,7 +29,7 @@ private:
 
     void setUpIOS();
     void setUpI2C();
-    void setUpModbusDevices();
+    void setUpDevice();
     void setUpDigitalInputs();
     void setUpDigitalOutputs();
 
