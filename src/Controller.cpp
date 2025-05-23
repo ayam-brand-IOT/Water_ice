@@ -35,7 +35,26 @@ ControllerState Controller::getState(){
 }
 
 void Controller::setUpDevice(){
+#ifndef DEBUG
     marel.begin();
+#endif
+}
+
+bool Controller::setTare(){
+#ifndef DEBUG
+    return marel.setTare();
+#else
+    DEBUG_M("Tare set");
+    return true;
+#endif
+}
+uint32_t Controller::getWeight(){
+#ifndef DEBUG
+    return marel.getWeight();
+#else
+    //return a random number between 100 and 1000
+    return random(500, 1000);
+#endif
 }
 
 void Controller::setUpDigitalInputs(){
@@ -62,3 +81,12 @@ void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
     return digitalWrite(output, value);
 }
 
+bool Controller::hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min) {
+    if(to_min) interval *= 60000UL;
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      return true;
+    }
+    return false; 
+}

@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = '.pio/build/edgebox-esp-100/firmware.bin'
+elf = '.pio/build/edgebox-esp-100/firmware.elf'

@@ -12,16 +12,17 @@
 
 enum ControllerState {
     IDLE,
-    ICE_FILLING,
+    FEED_TOTE,
     WATER_FILLING,
+    ICE_FILLING,
+    TOTE_READY
 };
 
 
 class Controller {
 private:
-
     ControllerState state = IDLE;
-    const uint8_t inputs[3] = {PRESENCE_SENSOR, ICE_READY, WATER_READY};
+    const uint8_t inputs[4] = {STOP_BTN, START_BTN, ICE_READY, WATER_READY};
     const uint8_t outputs[2] = {WATER_PUMP, ICE_PUMP};
 
     const size_t num_inputs = sizeof(inputs)/sizeof(inputs[0]);
@@ -33,17 +34,27 @@ private:
     void setUpDigitalInputs();
     void setUpDigitalOutputs();
 
+
 public:
     // ~Controller();
     // Controller(/* args */);
 
     void init();
+    bool setTare();
     void setUpRTC();
+    uint32_t getWeight();
     bool isRTCConnected();
     ControllerState getState();
     void setState(ControllerState state);
     bool readDigitalInput(uint8_t input);
     void writeDigitalOutput(uint8_t output, uint8_t value);
+    bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min);
+
+    void DEBUG_M(const char *message) {
+        char buffer[100];
+        snprintf(buffer, sizeof(buffer), "[Controller]: %s", message);
+        Serial.println(buffer);
+    }
 
 };
 

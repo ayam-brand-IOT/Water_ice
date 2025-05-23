@@ -3,15 +3,23 @@
 #include <Arduino.h>
 #include "EdgeBox_ESP_100.h"
 
+#define DEBUG 1
+#define HAS_ID false
+#define GRATER_THAN_MIN true
+
+#define MIN_WEIGHT 5
 
 // ###################### INPUTS ######################
-#define PRESENCE_SENSOR         DI_0
-#define ICE_READY               DI_1
+#define START_BTN               DI_0
+#define STOP_BTN                DI_1
+
+#define ICE_READY               DI_3
 #define WATER_READY             DI_2
 
 // ###################### OUTPUTS ######################
 #define WATER_PUMP              DO_0
 #define ICE_PUMP                DO_1
+
 
 // #################### MAREL - INFO ####################
 // Datos del servidor Marel
