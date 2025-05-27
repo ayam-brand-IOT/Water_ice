@@ -42,7 +42,8 @@ void Controller::setUpDevice(){
 
 bool Controller::setTare(){
 #ifndef DEBUG
-    return marel.setTare();
+    marel.setTare();
+    return true;
 #else
     DEBUG_M("Tare set");
     return true;
@@ -50,7 +51,8 @@ bool Controller::setTare(){
 }
 uint32_t Controller::getWeight(){
 #ifndef DEBUG
-    return marel.getWeight();
+    const String weight = marel.getWeight();
+    return weight.toInt();
 #else
     //return a random number between 100 and 1000
     return random(500, 1000);

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 #include "EdgeBox_ESP_100.h"
 
-#define DEBUG 1
+// #define DEBUG 1
 #define HAS_ID false
 #define GRATER_THAN_MIN true
 

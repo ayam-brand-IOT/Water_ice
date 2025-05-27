@@ -3,7 +3,7 @@
 
 Controller controller;
 
-#ifndef DEBUG
+#ifndef false
 Button start_btn(START_BTN);
 Button stop_btn(STOP_BTN);
 #endif
@@ -41,7 +41,7 @@ void setup() {
 
 controller.init();
 
-#ifndef DEBUG
+#ifndef false
   start_btn.begin();
   stop_btn.begin();
 #else
@@ -78,7 +78,7 @@ void loop() {
 
 
 void handleIDLE() {
-#ifndef DEBUG
+#ifndef false
   if(!start_btn.released()) return;
 #else
   if(controller.readDigitalInput(START_BTN)) return;
