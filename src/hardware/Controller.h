@@ -46,6 +46,10 @@ public:
     bool setTare();
     void setUpRTC();
     
+    void loopOTA();
+    void WiFiLoop();
+    void reconnectWiFi();
+    bool isWiFiConnected();
     uint32_t getWeight();
     bool isRTCConnected();
     ControllerState getState();

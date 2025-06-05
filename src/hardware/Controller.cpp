@@ -26,6 +26,27 @@ void Controller::setUpI2C(){
 
 }
 
+void Controller::loopOTA() {
+  wifi.loopOTA();
+}
+
+void Controller::WiFiLoop() {
+  if (!isWiFiConnected()) {
+    reconnectWiFi();
+    vTaskDelay(500 / portTICK_PERIOD_MS);
+    return;
+  }
+}
+
+void Controller::reconnectWiFi() {
+  wifi.reconnect();
+}
+
+
+bool Controller::isWiFiConnected() {
+  return wifi.isConnected();
+}
+
 void Controller::setUpWiFi(const char* ssid, const char* password, const char* hostname) {
   wifi.init(ssid, password, hostname);
 }

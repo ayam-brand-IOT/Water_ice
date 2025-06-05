@@ -2,6 +2,8 @@
 #include "Stage.h"
 
 Controller controller;
+TaskHandle_t communicationTask;
+
 
 #ifndef false
 Button start_btn(START_BTN);
@@ -28,9 +30,10 @@ void initStage3();
 void destroyStage1();
 void destroyStage2();
 void destroyStage3();
+void handleToteReady();
 void handleIceFilling();
 void handleWaterFilling();
-void handleToteReady();
+void backgroundTasks(void* pvParameters);
 
 // Stages
 Stage stage_1(2, initStage1, destroyStage1);
@@ -42,6 +45,8 @@ void setup() {
 controller.init();
 controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
 controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
+
+xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &communicationTask, 0);
 
 #ifndef false
   start_btn.begin();
@@ -76,6 +81,18 @@ void loop() {
       break;
   }
   
+}
+
+void backgroundTasks(void* pvParameters) {
+  for (;;) {
+    controller.WiFiLoop();
+    
+    if(controller.isWiFiConnected()) {
+      controller.loopOTA();
+    }
+    // printStackUsage(); // Monitorea el uso de la pila
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+  }
 }
 
 
