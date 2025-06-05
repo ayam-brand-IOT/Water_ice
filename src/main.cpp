@@ -60,7 +60,7 @@ void loop() {
   switch (current_state) {
     case IDLE:
       handleIDLE();
-      break;
+      break;  
     case WATER_FILLING:
       handleWaterFilling();
       break;
