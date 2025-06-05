@@ -32,6 +32,9 @@
 #define GATEWAY_ADDRESS { 192, 168, 1, 1 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 
+#define U_SSID "tapOmeter"
+#define U_PASS "S=klogw2"
+
 // // Configuración de red
 // extern byte mac[];
 // extern IPAddress ip;

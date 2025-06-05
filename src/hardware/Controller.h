@@ -7,6 +7,7 @@
 #include <Button.h>
 #include <Arduino.h>
 #include "marel.h"
+#include "WIFI.h"
 #include <Preferences.h>
 #include "EdgeBox_ESP_100.h"
 
@@ -21,6 +22,7 @@ enum ControllerState {
 
 class Controller {
 private:
+    WIFI wifi;
     EdgeBox_ESP_100 edgebox;
     ControllerState state = IDLE;
     const uint8_t inputs[4] = {STOP_BTN, START_BTN, ICE_READY, WATER_READY};
@@ -43,12 +45,15 @@ public:
     void init();
     bool setTare();
     void setUpRTC();
+    
     uint32_t getWeight();
     bool isRTCConnected();
     ControllerState getState();
     void setState(ControllerState state);
     bool readDigitalInput(uint8_t input);
     void writeDigitalOutput(uint8_t output, uint8_t value);
+    void connectToWiFi(bool web_server, bool web_serial, bool OTA);
+    void setUpWiFi(const char* ssid, const char* password, const char* hostname);
     bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min);
 
     void DEBUG_M(const char *message) {

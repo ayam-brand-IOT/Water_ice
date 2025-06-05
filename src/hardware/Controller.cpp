@@ -26,6 +26,16 @@ void Controller::setUpI2C(){
 
 }
 
+void Controller::setUpWiFi(const char* ssid, const char* password, const char* hostname) {
+  wifi.init(ssid, password, hostname);
+}
+
+void Controller::connectToWiFi(bool web_server, bool web_serial, bool OTA) {
+  wifi.connectToWiFi();
+  if(OTA) wifi.setUpOTA();
+  if(web_server) wifi.setUpWebServer(web_serial);
+}
+
 void Controller::setState(ControllerState state){
     this->state = state;
 }

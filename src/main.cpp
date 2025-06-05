@@ -1,4 +1,4 @@
-#include "Controller.h"
+#include "hardware/Controller.h"
 #include "Stage.h"
 
 Controller controller;
@@ -40,6 +40,8 @@ Stage stage_3(2, initStage3, destroyStage3);
 void setup() {
 
 controller.init();
+controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
+controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
 
 #ifndef false
   start_btn.begin();
