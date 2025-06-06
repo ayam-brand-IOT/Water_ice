@@ -109,10 +109,19 @@ void WIFI::setUpWebServer(bool brigeSerial){
   server.on("/reset", HTTP_POST, [&checkAuth](AsyncWebServerRequest *request) {
     if(!checkAuth(request)) return;
     request->send(200, "text/plain", "Resetting...");
-    ESP.restart(); 
+    ESP.restart();
   });
 
+  ws.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+                void *arg, uint8_t *data, size_t len) {
+    if (type == WS_EVT_CONNECT) {
+      Serial.println("WebSocket client connected");
+    } else if (type == WS_EVT_DISCONNECT) {
+      Serial.println("WebSocket client disconnected");
+    }
+  });
 
+  server.addHandler(&ws);
   server.begin();
 }
 
@@ -213,16 +222,23 @@ void WIFI::reconnect(){
 }
 
 void WIFI::DEBUG(const char *message){
-  // concat prefix to the message with the classname
   char buffer[100];
   snprintf(buffer, sizeof(buffer), "[WIFI]: %s", message);
   logger.println(buffer);
-}\
+}
 
 void WIFI::ERROR(ErrorType error){
   char buffer[100];
   snprintf(buffer, sizeof(buffer), " -> WIFI]: %s", errorMessages[error].c_str());
   logger.println(buffer);
+}
+
+void WIFI::loopWS(){
+  ws.cleanupClients();
+}
+
+void WIFI::broadcastWeight(uint32_t weight){
+  ws.textAll(String(weight));
 }
 
 
