@@ -62,6 +62,8 @@ xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &c
 
 void loop() {
   delay(100);
+  const uint32_t weight = controller.getWeight();
+  controller.broadcastWeight(weight);
   const ControllerState current_state = controller.getState();
 
   switch (current_state) {

@@ -50,6 +50,8 @@ class WIFI {
     bool refreshWiFiStatus();
     bool getConnectionStatus();
     void setUpWebServer(bool brigeSerial = false);
+    void loopWS();
+    void broadcastWeight(uint32_t weight);
   private:
     enum ErrorType { 
       WRONG_CREDENTIALS, 
@@ -70,6 +72,8 @@ class WIFI {
     String generateHTMLForJson(JsonVariant json, String path = "");
     void updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json);
     String setLayOutInfo(const char* site, String extra_prop = "", String value = "");
+
+    AsyncWebSocket ws = AsyncWebSocket("/ws");
 
 };
 #endif

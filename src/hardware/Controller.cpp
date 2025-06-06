@@ -31,6 +31,7 @@ void Controller::loopOTA() {
 }
 
 void Controller::WiFiLoop() {
+  wifi.loopWS();
   if (!isWiFiConnected()) {
     reconnectWiFi();
     vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -112,6 +113,10 @@ bool Controller::readDigitalInput(uint8_t input){
 
 void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
     return digitalWrite(output, value);
+}
+
+void Controller::broadcastWeight(uint32_t weight){
+    wifi.broadcastWeight(weight);
 }
 
 bool Controller::hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min) {

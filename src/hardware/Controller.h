@@ -59,6 +59,7 @@ public:
     void connectToWiFi(bool web_server, bool web_serial, bool OTA);
     void setUpWiFi(const char* ssid, const char* password, const char* hostname);
     bool hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min);
+    void broadcastWeight(uint32_t weight);
 
     void DEBUG_M(const char *message) {
         char buffer[100];

@@ -139,19 +139,14 @@ const char* INDEX_HTML = R"rawliteral(
         </div>
       </div>
       <script>
-        // === Actualización automática del peso ===
-        function fetchWeight() {
-          fetch('/weight')
-            .then(res => res.json())
-            .then(data => {
-              document.getElementById('weight').textContent = data.weight || '-';
-            })
-            .catch(() => {
-              document.getElementById('weight').textContent = '-';
-            });
-        }
-        setInterval(fetchWeight, 2000);
-        fetchWeight();
+        // === WebSocket para peso en tiempo real ===
+        const ws = new WebSocket(`ws://${location.host}/ws`);
+        ws.onmessage = (event) => {
+          document.getElementById('weight').textContent = event.data || '-';
+        };
+        ws.onclose = () => {
+          document.getElementById('weight').textContent = '-';
+        };
     
         // === Formulario Tote ID ===
         document.getElementById('palletForm').addEventListener('submit', function(e) {
