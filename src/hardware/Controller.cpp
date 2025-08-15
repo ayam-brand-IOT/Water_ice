@@ -16,10 +16,9 @@ void Controller::init(){
 }
 
 void Controller::setUpIOS(){
-    Serial.begin(115200);
+  Serial.begin(115200);
 
-    setUpDigitalInputs();
-    setUpDigitalOutputs();
+  setUpDigitalOutputs();
 }
 
 void Controller::setUpI2C(){
@@ -91,12 +90,10 @@ uint32_t Controller::getWeight(){
 #endif
 }
 
-void Controller::setUpDigitalInputs(){
-    for(int i = 0; i < num_inputs; i++) pinMode(inputs[i], INPUT_PULLUP);
-}
+
 
 void Controller::setUpDigitalOutputs(){
-    for(int i = 0; i < num_outputs; i++) pinMode(outputs[i], OUTPUT);
+  for (auto &output : outputs) pinMode(output, OUTPUT);
 }
 
 void Controller::setUpRTC(){

@@ -25,11 +25,8 @@ private:
     WIFI wifi;
     EdgeBox_ESP_100 edgebox;
     ControllerState state = IDLE;
-    const uint8_t inputs[4] = {STOP_BTN, START_BTN, ICE_READY, WATER_READY};
-    const uint8_t outputs[2] = {WATER_PUMP, ICE_PUMP};
 
-    const size_t num_inputs = sizeof(inputs)/sizeof(inputs[0]);
-    const size_t num_outputs = sizeof(outputs)/sizeof(outputs[0]);
+    const uint8_t outputs[2] = {WATER_PUMP, ICE_PUMP};
 
     void setUpIOS();
     void setUpI2C();

@@ -1,91 +1,85 @@
-#include "hardware/Controller.h"
-#include "Stage.h"
+#include "main.h"
 
+Scheduler runner;
 Controller controller;
-TaskHandle_t communicationTask;
-
-
-#ifndef false
-Button start_btn(START_BTN);
-Button stop_btn(STOP_BTN);
-#endif
-
-uint32_t waterTimer = 0UL;
-uint32_t iceTimer = 0UL;
-
-typedef struct {
-  uint16_t id;
-  uint32_t water_weight;
-  uint32_t ice_weight;
-  uint32_t tote_weight;
-  uint32_t raw_weight;
-} tote_data;
-
-tote_data tote = {0, 0, 0, 0, 0};
-
-void handleIDLE();
-void initStage1();
-void initStage2();
-void initStage3();
-void destroyStage1();
-void destroyStage2();
-void destroyStage3();
-void handleToteReady();
-void handleIceFilling();
-void handleWaterFilling();
-void backgroundTasks(void* pvParameters);
+TaskHandle_t detached_task;
 
 // Stages
 Stage stage_1(2, initStage1, destroyStage1);
 Stage stage_2(2, initStage2, destroyStage2);
 Stage stage_3(2, initStage3, destroyStage3);
 
+Task buttons_routine(20, TASK_FOREVER, &onButtonPressed);
+Task stop_ice_routine(100, TASK_ONCE,[]() {
+  controller.writeDigitalOutput(ICE_PUMP, LOW);
+  Serial.println("Ice pump turned off");
+});
+Task stop_water_routine(100, TASK_ONCE, []() {
+  controller.writeDigitalOutput(WATER_PUMP, LOW);
+  Serial.println("Water pump turned off");
+});
+
+button_action stop_btn          = {STOP, STOP_IO, onStop};
+button_action start_btn         = {START, START_IO, onStart};
+button_action manual_ice_btn    = {MANUAL_ICE, MANUAL_ICE_IO, onManualIce};
+button_action manual_water_btn  = {MANUAL_WATER, MANUAL_WATER_IO, onManualWater};
+
+Stage stages[] = {stage_1, stage_2, stage_3};
+button_action buttons[] = { stop_btn, start_btn, manual_ice_btn, manual_water_btn };
+
+uint32_t iceTimer = 0UL;
+uint32_t waterTimer = 0UL;
+tote_data tote = {0, 0, 0, 0, 0};
+
 void setup() {
+  for (auto &b : buttons) b.button.begin(); 
 
-controller.init();
-controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
-controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
+  controller.init();
+  controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
+  controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
 
-xTaskCreatePinnedToCore(backgroundTasks, "communicationTask", 12000, NULL, 1, &communicationTask, 0);
+  xTaskCreatePinnedToCore(communicationTask, "communicationTask", 12000, NULL, 1, &detached_task, 0);
 
-#ifndef false
-  start_btn.begin();
-  stop_btn.begin();
-#else
-  pinMode(START_BTN, INPUT_PULLUP);
-  pinMode(STOP_BTN, INPUT_PULLUP);
-#endif
+  runner.init();
+  runner.addTask(buttons_routine);
+  runner.addTask(stop_ice_routine);
+  runner.addTask(stop_water_routine);
+  buttons_routine.enable();
 
   delay(1000);
   Serial.println("Starting...");
 }
 
 void loop() {
-  delay(100);
+  delay(20);
   const uint32_t weight = controller.getWeight();
   controller.broadcastWeight(weight);
   const ControllerState current_state = controller.getState();
 
+  runner.execute();
+
+
+
   switch (current_state) {
     case IDLE:
-      handleIDLE();
+      // FUCK off
+
       break;  
     case WATER_FILLING:
-      handleWaterFilling();
+      onWaterFilling();
       break;
     case ICE_FILLING:
-      handleIceFilling();
+      onIceFilling();
       break;
     case TOTE_READY:
-      handleToteReady();
+      onToteReady();
       break;
     default:
       break;
   }
-  
 }
 
-void backgroundTasks(void* pvParameters) {
+void communicationTask(void* pvParameters) {
   for (;;) {
     controller.WiFiLoop();
     
@@ -97,29 +91,7 @@ void backgroundTasks(void* pvParameters) {
   }
 }
 
-
-void handleIDLE() {
-#ifndef false
-  if(!start_btn.released()) return;
-#else
-  if(controller.readDigitalInput(START_BTN)) return;
-#endif
-
-
-  const uint16_t current_weight = GRATER_THAN_MIN ? controller.getWeight() : MIN_WEIGHT - 1;
-
-  if(current_weight < MIN_WEIGHT) {
-    Serial.println("Weight is negative");
-    return;
-  }
-
-  Serial.println("IDLE");
-  controller.setTare();
-
-  controller.setState(WATER_FILLING);
-}
-
-void handleWaterFilling() {
+void onWaterFilling() {
   // Init stage 1
   if (stage_1.getCurrentStep() == 0) {
     stage_1.init();
@@ -144,7 +116,7 @@ void handleWaterFilling() {
   }
 }
 
-void handleIceFilling() {
+void onIceFilling() {
   // Init stage 2
   if (stage_2.getCurrentStep() == 0) {
     stage_2.init();
@@ -167,7 +139,7 @@ void handleIceFilling() {
   }
 }
 
-void handleToteReady() {
+void onToteReady() {
   // Init stage 3
   if (stage_3.getCurrentStep() == 0) {
     stage_3.init();
@@ -195,6 +167,11 @@ void handleToteReady() {
     stage_3.destroy();
     controller.setState(IDLE);
   }
+}
+
+void onButtonPressed() {
+  handleInputs();
+  readButtonTypeFromSerial(); // Read button type from serial input
 }
 
 void initStage1() {
@@ -266,4 +243,73 @@ void destroyStage3() {
   tote = {0, 0, 0, 0, 0};
   Serial.println("Stage 3 destroyed");
 
+}
+
+button_type handleInputs(button_type override){
+  // iterate buttons
+  for (auto &btn : buttons) {
+    if (btn.button.released() || override == btn.type) {
+      btn.handler();
+      return btn.type;
+    }
+  }
+  return NONE;
+}
+
+void onStart() {
+  if (controller.getState() != IDLE) {
+    Serial.println("Already started");
+    return;
+  }
+
+  const uint16_t current_weight = GRATER_THAN_MIN ? controller.getWeight() : MIN_WEIGHT - 1;
+
+  if(current_weight < MIN_WEIGHT) {
+    Serial.println("Weight is negative");
+    return;
+  }
+
+  Serial.println("START");
+  controller.setTare();
+
+  controller.setState(WATER_FILLING);
+}
+
+void onStop() {
+  Serial.println("STOP");
+  controller.setState(IDLE);
+
+  controller.writeDigitalOutput(ICE_PUMP, LOW);
+  controller.writeDigitalOutput(WATER_PUMP, LOW);
+
+  stop_ice_routine.cancel();
+  stop_water_routine.cancel();
+}
+
+void onManualIce() {
+  Serial.println("Manual Ice");
+  controller.writeDigitalOutput(ICE_PUMP, HIGH);
+  stop_ice_routine.restartDelayed(5000);
+}
+
+void onManualWater() {
+  Serial.println("Manual Water");
+  controller.writeDigitalOutput(WATER_PUMP, HIGH);
+  stop_water_routine.restartDelayed(5000);
+  
+}
+
+void readButtonTypeFromSerial() {
+  if (Serial.available()) {
+    const uint8_t buttonType = Serial.parseInt();
+
+    if (buttonType >= 0 && buttonType < BTN_COUNT) { // Valid button types are 0 to 5
+      Serial.print("Button type received: ");
+      Serial.println(buttonType);
+      handleInputs(static_cast<button_type>(buttonType));
+    }
+    else {
+      Serial.println("Invalid button type. Please enter a number between 0 and 5.");
+    }
+  }
 }
