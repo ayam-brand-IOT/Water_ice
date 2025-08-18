@@ -98,6 +98,21 @@ void WIFI::setUpWebServer(bool brigeSerial){
     request->send(200, "text/html", doc);
   });
 
+  server.on("/register_pallet", HTTP_POST, [&](AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
+    String palletId = request->arg("id");
+    if (palletId.length() > 0) {
+      strncpy(this->palletId, palletId.c_str(), sizeof(this->palletId) - 1);
+      this->palletId[sizeof(this->palletId) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
+      
+      DEBUG(("Pallet ID set to: " + String(this->palletId)).c_str());
+
+      request->send(200, "text/plain", "Pallet ID set to: " + palletId);
+    } else {
+      request->send(400, "text/plain", "Invalid pallet ID");
+    }
+  });
+
 
   server.onNotFound([](AsyncWebServerRequest *request) {
       // request->send(SPIFFS, request->url(), String(), false); <------ Buen pishi hack!

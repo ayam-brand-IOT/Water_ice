@@ -157,10 +157,10 @@ const char* INDEX_HTML = R"rawliteral(
           statusMsg.className = '';
           fetch('/register_pallet', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: palletId })
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({ id: palletId })
           })
-          .then(res => res.ok ? res.json() : Promise.reject(res))
+          .then(res => res.ok ? res.text() : Promise.reject(res))
           .then(data => {
             statusMsg.textContent = data.message || 'Tote registered successfully.';
             statusMsg.className = 'status status-success';
@@ -168,10 +168,7 @@ const char* INDEX_HTML = R"rawliteral(
           })
           .catch(async err => {
             let msg = "Error registering Tote.";
-            if (err.json) {
-              const e = await err.json();
-              if (e && e.message) msg = e.message;
-            }
+            try { msg = await err.text(); } catch(_) {}
             statusMsg.textContent = msg;
             statusMsg.className = 'status status-error';
           });

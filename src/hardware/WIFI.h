@@ -45,22 +45,23 @@ class WIFI {
     void setUpOTA();
     void reconnect();
     bool isConnected();
-
+    
     void connectToWiFi();
     bool refreshWiFiStatus();
     bool getConnectionStatus();
     void setUpWebServer(bool brigeSerial = false);
     void loopWS();
     void broadcastWeight(uint32_t weight);
-  private:
+    private:
     enum ErrorType { 
       WRONG_CREDENTIALS, 
       LOST_CONNECTION,
       NUM_ERRORS 
     };
-
-    const String errorMessages[NUM_ERRORS] = {ERR_WRONG_CREDENTIALS, ERR_LOST_CONNECTION};
     
+    const String errorMessages[NUM_ERRORS] = {ERR_WRONG_CREDENTIALS, ERR_LOST_CONNECTION};
+    char palletId[32];
+
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
