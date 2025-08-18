@@ -14,6 +14,7 @@
 #include "resources/WebFiles.h"
 
 #define SSID_SIZE 32
+#define ID_SIZE 32
 #define PASSWORD_SIZE 64
 #define HOSTNAME_SIZE 32
 #define IP_ADDRESS_SIZE 16
@@ -52,6 +53,17 @@ class WIFI {
     void setUpWebServer(bool brigeSerial = false);
     void loopWS();
     void broadcastWeight(uint32_t weight);
+
+    void addToteIDcallback(void (*callback)(const String&)) {
+      if (callback == NULL) {
+        DEBUG("Tote ID callback is NULL");
+        return;
+      }
+      this->toteIDCallback = callback;
+    }
+
+
+
     private:
     enum ErrorType { 
       WRONG_CREDENTIALS, 
@@ -60,12 +72,13 @@ class WIFI {
     };
     
     const String errorMessages[NUM_ERRORS] = {ERR_WRONG_CREDENTIALS, ERR_LOST_CONNECTION};
-    char palletId[32];
 
     char ssid[SSID_SIZE];  
     char password[PASSWORD_SIZE];
     char hostname[HOSTNAME_SIZE];  
     char static_ip[IP_ADDRESS_SIZE];
+
+    void (*toteIDCallback)(const String&) = NULL;
     bool last_connection_state = false;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
@@ -73,7 +86,6 @@ class WIFI {
     String generateHTMLForJson(JsonVariant json, String path = "");
     void updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json);
     String setLayOutInfo(const char* site, String extra_prop = "", String value = "");
-
     AsyncWebSocket ws = AsyncWebSocket("/ws");
 
 };

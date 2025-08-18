@@ -22,7 +22,6 @@ enum ControllerState {
 
 class Controller {
 private:
-    WIFI wifi;
     EdgeBox_ESP_100 edgebox;
     ControllerState state = IDLE;
 
@@ -38,6 +37,7 @@ private:
 public:
     // ~Controller();
     // Controller(/* args */);
+    WIFI wifi;
 
     void init();
     bool setTare();

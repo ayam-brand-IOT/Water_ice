@@ -37,6 +37,7 @@ void setup() {
   controller.init();
   controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
+  controller.wifi.addToteIDcallback(&setToteID);
 
   xTaskCreatePinnedToCore(communicationTask, "communicationTask", 12000, NULL, 1, &detached_task, 0);
 
@@ -144,11 +145,12 @@ void onToteReady() {
   if (stage_3.getCurrentStep() == 0) {
     stage_3.init();
 
-    tote.id = HAS_ID ? 5 : 0;
-    if (tote.id == 0) {
+    
+    if (tote.id[0] == '\0') {
       Serial.println("Tote ID not set");
       delay(1000);
     }
+
     else {
       Serial.println("Waiting for confirmation..."); 
       delay(1000);
@@ -312,4 +314,17 @@ void readButtonTypeFromSerial() {
       Serial.println("Invalid button type. Please enter a number between 0 and 5.");
     }
   }
+}
+
+
+void setToteID(const String& id) {
+  if (id.length() >= ID_SIZE) {
+    Serial.println("Tote ID is too long");
+    return;
+  }
+
+  strncpy(tote.id, id.c_str(), ID_SIZE);
+  tote.id[ID_SIZE - 1] = '\0'; // Ensure null termination
+  Serial.print("Tote ID set to: ");
+  Serial.println(tote.id);
 }

@@ -102,10 +102,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
     if(!checkAuth(request)) return;
     String palletId = request->arg("id");
     if (palletId.length() > 0) {
-      strncpy(this->palletId, palletId.c_str(), sizeof(this->palletId) - 1);
-      this->palletId[sizeof(this->palletId) - 1] = '\0';  // Asegurarse de que esté terminado con '\0'
-      
-      DEBUG(("Pallet ID set to: " + String(this->palletId)).c_str());
+      toteIDCallback(palletId);
 
       request->send(200, "text/plain", "Pallet ID set to: " + palletId);
     } else {

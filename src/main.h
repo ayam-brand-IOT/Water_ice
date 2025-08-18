@@ -4,7 +4,7 @@
 
 
 typedef struct {
-  uint16_t id;
+  char id[ID_SIZE];
   uint32_t water_weight;
   uint32_t ice_weight;
   uint32_t tote_weight;
@@ -34,6 +34,7 @@ void onStart();
 void onManualIce();
 void onManualWater();
 void onButtonPressed();
+void setToteID(const String& id);
 button_type handleInputs(button_type override = NONE);
 
 void handleIDLE();
