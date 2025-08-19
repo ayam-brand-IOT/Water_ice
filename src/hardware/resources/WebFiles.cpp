@@ -136,17 +136,34 @@ const char* INDEX_HTML = R"rawliteral(
             <button type="submit" class="button">Enter Tote ID</button>
           </form>
           <div id="statusMsg"></div>
+          <div id="recentContainer">
+            <div class="weight-label" style="margin-top:1rem;">Last IDs</div>
+            <ul id="recentIds" style="list-style:none;padding-left:0;margin-top:0.5rem;"></ul>
+          </div>
         </div>
       </div>
       <script>
-        // === WebSocket para peso en tiempo real ===
-        const ws = new WebSocket(`ws://${location.host}/ws`);
-        ws.onmessage = (event) => {
-          document.getElementById('weight').textContent = event.data || '-';
-        };
-        ws.onclose = () => {
-          document.getElementById('weight').textContent = '-';
-        };
+        // === WebSocket para peso en tiempo real con reconexión ===
+        let ws;
+        let reconnectDelay = 1000;
+        function connectWS() {
+          ws = new WebSocket(`ws://${location.host}/ws`);
+          ws.onopen = () => {
+            reconnectDelay = 1000;
+          };
+          ws.onmessage = (event) => {
+            document.getElementById('weight').textContent = event.data || '-';
+          };
+          ws.onclose = () => {
+            document.getElementById('weight').textContent = '-';
+            setTimeout(connectWS, reconnectDelay);
+            reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+          };
+          ws.onerror = () => {
+            ws.close();
+          };
+        }
+        connectWS();
     
         // === Formulario Tote ID ===
         document.getElementById('palletForm').addEventListener('submit', function(e) {
@@ -165,6 +182,7 @@ const char* INDEX_HTML = R"rawliteral(
             statusMsg.textContent = data.message || 'Tote registered successfully.';
             statusMsg.className = 'status status-success';
             document.getElementById('palletForm').reset();
+            addRecentId(palletId);
           })
           .catch(async err => {
             let msg = "Error registering Tote.";
@@ -173,6 +191,20 @@ const char* INDEX_HTML = R"rawliteral(
             statusMsg.className = 'status status-error';
           });
         });
+
+        const recentIds = [];
+        const maxIds = 5;
+        function addRecentId(id) {
+          recentIds.unshift(id);
+          if (recentIds.length > maxIds) recentIds.pop();
+          const list = document.getElementById('recentIds');
+          list.innerHTML = '';
+          recentIds.forEach(i => {
+            const li = document.createElement('li');
+            li.textContent = i;
+            list.appendChild(li);
+          });
+        }
       </script>
     </body>
     </html>
