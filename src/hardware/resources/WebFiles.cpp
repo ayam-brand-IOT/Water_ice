@@ -139,14 +139,27 @@ const char* INDEX_HTML = R"rawliteral(
         </div>
       </div>
       <script>
-        // === WebSocket para peso en tiempo real ===
-        const ws = new WebSocket(`ws://${location.host}/ws`);
-        ws.onmessage = (event) => {
-          document.getElementById('weight').textContent = event.data || '-';
-        };
-        ws.onclose = () => {
-          document.getElementById('weight').textContent = '-';
-        };
+        // === WebSocket para peso en tiempo real con reconexión ===
+        let ws;
+        let reconnectDelay = 1000;
+        function connectWS() {
+          ws = new WebSocket(`ws://${location.host}/ws`);
+          ws.onopen = () => {
+            reconnectDelay = 1000;
+          };
+          ws.onmessage = (event) => {
+            document.getElementById('weight').textContent = event.data || '-';
+          };
+          ws.onclose = () => {
+            document.getElementById('weight').textContent = '-';
+            setTimeout(connectWS, reconnectDelay);
+            reconnectDelay = Math.min(reconnectDelay * 2, 10000);
+          };
+          ws.onerror = () => {
+            ws.close();
+          };
+        }
+        connectWS();
     
         // === Formulario Tote ID ===
         document.getElementById('palletForm').addEventListener('submit', function(e) {
