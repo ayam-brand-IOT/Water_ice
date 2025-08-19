@@ -19,6 +19,19 @@ Task stop_water_routine(100, TASK_ONCE, []() {
   Serial.println("Water pump turned off");
 });
 
+Task broadcast_weight_routine(100, TASK_FOREVER, []() {
+  static uint32_t last_weight = 0;
+  static uint32_t last_broadcast = 0;
+  const uint32_t current_weight = controller.getWeight();
+  const uint32_t now = millis();
+
+  if (current_weight != last_weight || (now - last_broadcast) >= 1000) {
+    last_weight = current_weight;
+    last_broadcast = now;
+    controller.broadcastWeight(current_weight);
+  }
+});
+
 button_action stop_btn          = {STOP, STOP_IO, onStop};
 button_action start_btn         = {START, START_IO, onStart};
 button_action manual_ice_btn    = {MANUAL_ICE, MANUAL_ICE_IO, onManualIce};
@@ -45,7 +58,9 @@ void setup() {
   runner.addTask(buttons_routine);
   runner.addTask(stop_ice_routine);
   runner.addTask(stop_water_routine);
+  runner.addTask(broadcast_weight_routine);
   buttons_routine.enable();
+  broadcast_weight_routine.enable();
 
   delay(1000);
   Serial.println("Starting...");
@@ -53,13 +68,6 @@ void setup() {
 
 void loop() {
   delay(20);
-  // broadcast the weight each .5 seconds
-  static uint32_t last_broadcast = 0;
-  if (millis() - last_broadcast > 400) {
-    last_broadcast = millis();
-    const uint32_t weight = controller.getWeight();
-    controller.broadcastWeight(weight);
-  }
   const ControllerState current_state = controller.getState();
 
   runner.execute();

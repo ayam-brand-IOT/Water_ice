@@ -25,6 +25,7 @@ bool MarelClient::isConnected() {
 
 String MarelClient::sendCommand(const String& cmd) {
     if (!isConnected()) {
+        _client.stop();
         if (!connectToServer()) {
             return "ERROR: No connection";
         }
@@ -41,6 +42,10 @@ String MarelClient::sendCommand(const String& cmd) {
 
     while (_client.available()) {
         response += (char)_client.read();
+    }
+
+    if (response.length() == 0) {
+        _client.stop();
     }
 
     response.trim();
@@ -76,7 +81,12 @@ void MarelClient::setZero(){
 
 String MarelClient::getWeight(){
     String response = readValue(WEIGHT_ID, 2);
-
+    if (response.length() == 0) {
+        _client.stop();
+        if (connectToServer()) {
+            response = readValue(WEIGHT_ID, 2);
+        }
+    }
     return castWeightResponse(response);
 }
 
