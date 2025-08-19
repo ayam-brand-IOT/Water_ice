@@ -145,7 +145,7 @@ void onToteReady() {
   if (stage_3.getCurrentStep() == 0) {
     stage_3.init();
 
-    
+
     if (tote.id[0] == '\0') {
       Serial.println("Tote ID not set");
       delay(1000);
@@ -264,7 +264,7 @@ void onStart() {
     return;
   }
 
-  const uint16_t current_weight = GRATER_THAN_MIN ? controller.getWeight() : MIN_WEIGHT - 1;
+  const uint16_t current_weight = true ? controller.getWeight() : MIN_WEIGHT - 1;
 
   if(current_weight < MIN_WEIGHT) {
     Serial.println("Weight is negative");

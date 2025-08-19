@@ -19,7 +19,6 @@ enum ControllerState {
     TOTE_READY
 };
 
-
 class Controller {
 private:
     EdgeBox_ESP_100 edgebox;

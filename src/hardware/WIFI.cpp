@@ -102,6 +102,7 @@ void WIFI::setUpWebServer(bool brigeSerial){
     if(!checkAuth(request)) return;
     String palletId = request->arg("id");
     if (palletId.length() > 0) {
+      Serial.println("Pallet ID set to: " + palletId);
       toteIDCallback(palletId);
 
       request->send(200, "text/plain", "Pallet ID set to: " + palletId);

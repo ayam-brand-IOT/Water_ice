@@ -3,10 +3,6 @@
 #include <Arduino.h>
 #include "EdgeBox_ESP_100.h"
 
-// #define DEBUG 1
-#define HAS_ID false
-#define GRATER_THAN_MIN true
-
 #define MIN_WEIGHT 5
 
 // ###################### INPUTS ######################
@@ -37,10 +33,16 @@
 #define U_SSID "MFP-Guest24"
 #define U_PASS "testing123"
 
-// // Configuración de red
-// extern byte mac[];
-// extern IPAddress ip;
-// extern IPAddress gateway;
-// extern IPAddress subnet;
+// ##################### WEB SERVER #####################
 
+#define SSID_SIZE 32
+#define ID_SIZE 32
+#define PASSWORD_SIZE 64
+#define HOSTNAME_SIZE 32
+#define IP_ADDRESS_SIZE 16
+
+#define www_username "admin"
+#define www_password "admin"
+#define VERSION "1.0.0"
+#define SERVER_INDEX_HTML INDEX_HTML
 

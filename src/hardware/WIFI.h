@@ -10,19 +10,7 @@
 #include <WiFiClient.h>
 #include <ArduinoOTA.h>
 #include <ArduinoJson.h>
-// #include "./hardware/Logger.h"
 #include "resources/WebFiles.h"
-
-#define SSID_SIZE 32
-#define ID_SIZE 32
-#define PASSWORD_SIZE 64
-#define HOSTNAME_SIZE 32
-#define IP_ADDRESS_SIZE 16
-
-#define www_username "admin"
-#define www_password "admin"
-#define VERSION "1.0.0"
-#define SERVER_INDEX_HTML INDEX_HTML
 
 // ERROR MESSAGES
 #define ERR_WRONG_CREDENTIALS "Wrong credentials"
@@ -63,7 +51,6 @@ class WIFI {
     }
 
 
-
     private:
     enum ErrorType { 
       WRONG_CREDENTIALS, 
@@ -82,9 +69,6 @@ class WIFI {
     bool last_connection_state = false;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);
-    bool validateJSON(const String& jsonString);
-    String generateHTMLForJson(JsonVariant json, String path = "");
-    void updateJsonFromForm(AsyncWebServerRequest *request, JsonVariant json);
     String setLayOutInfo(const char* site, String extra_prop = "", String value = "");
     AsyncWebSocket ws = AsyncWebSocket("/ws");
 
