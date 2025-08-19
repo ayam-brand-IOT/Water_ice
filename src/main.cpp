@@ -53,8 +53,13 @@ void setup() {
 
 void loop() {
   delay(20);
-  const uint32_t weight = controller.getWeight();
-  controller.broadcastWeight(weight);
+  // broadcast the weight each .5 seconds
+  static uint32_t last_broadcast = 0;
+  if (millis() - last_broadcast > 400) {
+    last_broadcast = millis();
+    const uint32_t weight = controller.getWeight();
+    controller.broadcastWeight(weight);
+  }
   const ControllerState current_state = controller.getState();
 
   runner.execute();

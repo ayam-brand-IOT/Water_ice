@@ -64,30 +64,23 @@ void Controller::setState(ControllerState state){
 ControllerState Controller::getState(){
     return this->state;
 }
-
 void Controller::setUpDevice(){
-#ifndef DEBUG
-    marel.begin();
-#endif
+
+  marel.begin();
 }
 
 bool Controller::setTare(){
-#ifndef DEBUG
+
     marel.setTare();
     return true;
-#else
-    DEBUG_M("Tare set");
-    return true;
-#endif
+
 }
+
 uint32_t Controller::getWeight(){
-#ifndef DEBUG
     const String weight = marel.getWeight();
+    DEBUG_M(("Weight: " + weight).c_str());
     return weight.toInt();
-#else
-    //return a random number between 100 and 1000
-    return random(500, 1000);
-#endif
+
 }
 
 

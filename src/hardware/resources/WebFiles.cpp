@@ -153,6 +153,7 @@ const char* INDEX_HTML = R"rawliteral(
           };
           ws.onmessage = (event) => {
             document.getElementById('weight').textContent = event.data || '-';
+            console.log("Weight updated:", event.data);
           };
           ws.onclose = () => {
             document.getElementById('weight').textContent = '-';
