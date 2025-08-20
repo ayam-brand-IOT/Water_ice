@@ -250,7 +250,7 @@ void WIFI::loopWS(){
   ws.cleanupClients();
 }
 
-void WIFI::broadcastWeight(uint32_t weight){
+void WIFI::broadcastWeight(float weight){
   ws.textAll(String(weight));
 }
 

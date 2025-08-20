@@ -76,10 +76,16 @@ bool Controller::setTare(){
 
 }
 
-uint32_t Controller::getWeight(){
-    const String weight = marel.getWeight();
-    DEBUG_M(("Weight: " + weight).c_str());
-    return weight.toInt();
+float Controller::getWeight(){
+  String weight = marel.getWeight(); // p.ej. "0.00" o "76.4"
+  weight.trim();                     // quita \r\n y espacios
+  weight.replace(',', '.');          // por si llega con coma
+  DEBUG_M(("Raw Weight: " + weight).c_str());
+
+  float val = weight.toFloat();
+  // Muestra con 2 decimales sí o sí
+  Serial.printf("Parsed Weight: %.2f\n", val); // o Serial.println(val, 2);
+  return val;
 
 }
 
@@ -105,7 +111,7 @@ void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
     return digitalWrite(output, value);
 }
 
-void Controller::broadcastWeight(uint32_t weight){
+void Controller::broadcastWeight(float weight){
     wifi.broadcastWeight(weight);
 }
 

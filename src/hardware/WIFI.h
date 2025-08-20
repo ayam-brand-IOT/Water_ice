@@ -40,7 +40,7 @@ class WIFI {
     bool getConnectionStatus();
     void setUpWebServer(bool brigeSerial = false);
     void loopWS();
-    void broadcastWeight(uint32_t weight);
+    void broadcastWeight(float weight);
 
     void addToteIDcallback(void (*callback)(const String&)) {
       if (callback == NULL) {

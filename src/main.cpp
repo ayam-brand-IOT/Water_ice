@@ -20,9 +20,9 @@ Task stop_water_routine(100, TASK_ONCE, []() {
 });
 
 Task broadcast_weight_routine(100, TASK_FOREVER, []() {
-  static uint32_t last_weight = 0;
+  static float last_weight = 0;
   static uint32_t last_broadcast = 0;
-  const uint32_t current_weight = controller.getWeight();
+  const float current_weight = controller.getWeight();
   const uint32_t now = millis();
 
   if (current_weight != last_weight || (now - last_broadcast) >= 1000) {
