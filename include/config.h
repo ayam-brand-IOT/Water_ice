@@ -22,13 +22,13 @@
 // Datos del servidor Marel
 #define SERVER_PORT             5200
 #define SERVER_IP               "192.168.1.7"
-#define CLIENT_IP               {192, 168, 1, 29}
-#define CLIENT_GATEWAY          {192, 168, 1, 254}       
+#define CLIENT_IP               {192, 168, 1, 5}
+#define CLIENT_GATEWAY          {192, 168, 1, 1}       
 #define MAC_ADDRESS             { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
 
 
 //Configuración de red
-#define HAS_STATIC_IP                               //TURN ON THE STATIC IP
+// #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
 #define IP_ADDRESS { 192, 168, 100, 29 }
 #define GATEWAY_ADDRESS { 192, 168, 1, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
