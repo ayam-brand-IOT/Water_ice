@@ -118,6 +118,23 @@ const char* INDEX_HTML = R"rawliteral(
           color: #991b1b;
           border: 1.2px solid #991b1b44;
         }
+        .socket-bar {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          text-align: center;
+          padding: 0.5rem 0;
+          font-weight: 500;
+        }
+        .socket-bar.connected {
+          background: #bbf7d0;
+          color: #166534;
+        }
+        .socket-bar.disconnected {
+          background: #fecaca;
+          color: #991b1b;
+        }
       </style>
     </head>
     <body>
@@ -142,14 +159,26 @@ const char* INDEX_HTML = R"rawliteral(
           </div>
         </div>
       </div>
+      <div id="socketStatus" class="socket-bar disconnected">Socket: disconnected</div>
       <script>
         // === WebSocket para peso en tiempo real con reconexión ===
         let ws;
         let reconnectDelay = 1000;
+        function updateSocketStatus(isConnected) {
+          const el = document.getElementById('socketStatus');
+          if (isConnected) {
+            el.textContent = 'Socket: connected';
+            el.className = 'socket-bar connected';
+          } else {
+            el.textContent = 'Socket: disconnected';
+            el.className = 'socket-bar disconnected';
+          }
+        }
         function connectWS() {
           ws = new WebSocket(`ws://${location.host}/ws`);
           ws.onopen = () => {
             reconnectDelay = 1000;
+            updateSocketStatus(true);
           };
           ws.onmessage = (event) => {
             document.getElementById('weight').textContent = event.data || '-';
@@ -157,6 +186,7 @@ const char* INDEX_HTML = R"rawliteral(
           };
           ws.onclose = () => {
             document.getElementById('weight').textContent = '-';
+            updateSocketStatus(false);
             setTimeout(connectWS, reconnectDelay);
             reconnectDelay = Math.min(reconnectDelay * 2, 10000);
           };

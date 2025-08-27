@@ -1,18 +1,18 @@
 #include "Controller.h"
 
 byte mac[] = MAC_ADDRESS;
-IPAddress ip(IP_ADDRESS);
-IPAddress gateway(GATEWAY_ADDRESS);
+IPAddress ip(CLIENT_IP);
+IPAddress gateway(CLIENT_GATEWAY);
 IPAddress subnet(SUBNET_ADDRESS);
 
 MarelClient marel(SERVER_IP, SERVER_PORT, mac, ip, gateway, subnet);
 
 
 void Controller::init(){
-    setUpIOS();
-    // setUpI2C();
-    setUpDevice();
-    // setUpRTC();
+  setUpIOS();
+  // setUpI2C();
+  setUpDevice();
+  // setUpRTC();
 }
 
 void Controller::setUpIOS(){
@@ -42,7 +42,6 @@ void Controller::reconnectWiFi() {
   wifi.reconnect();
 }
 
-
 bool Controller::isWiFiConnected() {
   return wifi.isConnected();
 }
@@ -58,28 +57,32 @@ void Controller::connectToWiFi(bool web_server, bool web_serial, bool OTA) {
 }
 
 void Controller::setState(ControllerState state){
-    this->state = state;
+  this->state = state;
 }
 
 ControllerState Controller::getState(){
-    return this->state;
+  return this->state;
 }
-void Controller::setUpDevice(){
 
+void Controller::setUpDevice(){
   marel.begin();
 }
 
 bool Controller::setTare(){
-
-    marel.setTare();
-    return true;
-
+  marel.setTare();
+  return true;
 }
 
-uint32_t Controller::getWeight(){
-    const String weight = marel.getWeight();
-    DEBUG_M(("Weight: " + weight).c_str());
-    return weight.toInt();
+float Controller::getWeight(){
+  String weight = marel.getWeight(); // p.ej. "0.00" o "76.4"
+  weight.trim();                     // quita \r\n y espacios
+  weight.replace(',', '.');          // por si llega con coma
+  DEBUG_M(("Raw Weight: " + weight).c_str());
+
+  float val = weight.toFloat();
+  // Muestra con 2 decimales sí o sí
+  Serial.printf("Parsed Weight: %.2f\n", val); // o Serial.println(val, 2);
+  return val;
 
 }
 
@@ -94,19 +97,19 @@ void Controller::setUpRTC(){
 }
 
 bool Controller::isRTCConnected(){
-    return true;
+  return true;
 }
 
 bool Controller::readDigitalInput(uint8_t input){
-    return digitalRead(input);
+  return digitalRead(input);
 }
 
 void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
-    return digitalWrite(output, value);
+  return digitalWrite(output, value);
 }
 
-void Controller::broadcastWeight(uint32_t weight){
-    wifi.broadcastWeight(weight);
+void Controller::broadcastWeight(float weight){
+  wifi.broadcastWeight(weight);
 }
 
 bool Controller::hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min) {
