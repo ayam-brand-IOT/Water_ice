@@ -146,9 +146,10 @@ String WIFI::getIP(){
 
 void WIFI::connectToWiFi(){
   // Set static IP if provided
-  IPAddress local_ip;
-
-  // WiFi.config(IPAddress(192, 168, 100, 29), IPAddress(192, 168, 100, 254), IPAddress(255, 255, 255, 0), IPAddress(8, 8, 8, 8));
+  
+  #ifdef HAS_STATIC_IP
+  WiFi.config(IP_ADDRESS, GATEWAY_ADDRESS, SUBNET_ADDRESS, IPAddress(8, 8, 8, 8));
+  #endif
 
   WiFi.begin(ssid, password);
   uint32_t notConnectedCounter = 0;

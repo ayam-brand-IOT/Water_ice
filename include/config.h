@@ -30,6 +30,9 @@
 #define GATEWAY_ADDRESS { 192, 168, 1, 1 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 
+//TURN ON THE STATIC IP
+#define HAS_STATIC_IP
+
 #define U_SSID "MFP-Guest24"
 #define U_PASS "testing123"
 
