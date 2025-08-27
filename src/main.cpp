@@ -19,7 +19,7 @@ Task stop_water_routine(100, TASK_ONCE, []() {
   Serial.println("Water pump turned off");
 });
 
-Task broadcast_weight_routine(100, TASK_FOREVER, []() {
+Task broadcast_weight_routine(200, TASK_FOREVER, []() {
   static float last_weight = 0;
   static uint32_t last_broadcast = 0;
   const float current_weight = controller.getWeight();

@@ -33,6 +33,9 @@
 #define U_SSID "MFP-Guest24"
 #define U_PASS "testing123"
 
+// #define U_SSID "CFPP (Test)"
+// #define U_PASS "cfpptest"
+
 // ##################### WEB SERVER #####################
 
 #define SSID_SIZE 32
