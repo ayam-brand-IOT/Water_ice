@@ -48,7 +48,7 @@ void setup() {
   for (auto &b : buttons) b.button.begin(); 
 
   controller.init();
-  controller.setUpWiFi(U_SSID, U_PASS, "HOST_NAME");
+  controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   controller.wifi.addToteIDcallback(&setToteID);
 
@@ -71,8 +71,6 @@ void loop() {
   const ControllerState current_state = controller.getState();
 
   runner.execute();
-
-
 
   switch (current_state) {
     case IDLE:
@@ -200,6 +198,8 @@ void initStage2() {
   Serial.println("Stage 2 Filling Ice");
   controller.setTare();
   controller.writeDigitalOutput(ICE_PUMP, HIGH);
+  delay(200);
+  controller.writeDigitalOutput(ICE_PUMP, LOW);
 }
 
 void initStage3() {
@@ -231,7 +231,10 @@ void destroyStage2() {
 
   tote.ice_weight = ice_weight;
 
-  controller.writeDigitalOutput(ICE_PUMP, LOW);
+  controller.writeDigitalOutput(ICE_STOP, HIGH);
+  delay(200);
+  controller.writeDigitalOutput(ICE_STOP, LOW);
+
   Serial.println("Ice filling completed");
   Serial.println("Stage 2 destroyed");
 } 

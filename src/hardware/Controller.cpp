@@ -1,18 +1,18 @@
 #include "Controller.h"
 
 byte mac[] = MAC_ADDRESS;
-IPAddress ip(IP_ADDRESS);
-IPAddress gateway(GATEWAY_ADDRESS);
+IPAddress ip(CLIENT_IP);
+IPAddress gateway(CLIENT_GATEWAY);
 IPAddress subnet(SUBNET_ADDRESS);
 
 MarelClient marel(SERVER_IP, SERVER_PORT, mac, ip, gateway, subnet);
 
 
 void Controller::init(){
-    setUpIOS();
-    // setUpI2C();
-    setUpDevice();
-    // setUpRTC();
+  setUpIOS();
+  // setUpI2C();
+  setUpDevice();
+  // setUpRTC();
 }
 
 void Controller::setUpIOS(){
@@ -42,7 +42,6 @@ void Controller::reconnectWiFi() {
   wifi.reconnect();
 }
 
-
 bool Controller::isWiFiConnected() {
   return wifi.isConnected();
 }
@@ -58,22 +57,20 @@ void Controller::connectToWiFi(bool web_server, bool web_serial, bool OTA) {
 }
 
 void Controller::setState(ControllerState state){
-    this->state = state;
+  this->state = state;
 }
 
 ControllerState Controller::getState(){
-    return this->state;
+  return this->state;
 }
-void Controller::setUpDevice(){
 
+void Controller::setUpDevice(){
   marel.begin();
 }
 
 bool Controller::setTare(){
-
-    marel.setTare();
-    return true;
-
+  marel.setTare();
+  return true;
 }
 
 float Controller::getWeight(){
@@ -100,19 +97,19 @@ void Controller::setUpRTC(){
 }
 
 bool Controller::isRTCConnected(){
-    return true;
+  return true;
 }
 
 bool Controller::readDigitalInput(uint8_t input){
-    return digitalRead(input);
+  return digitalRead(input);
 }
 
 void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
-    return digitalWrite(output, value);
+  return digitalWrite(output, value);
 }
 
 void Controller::broadcastWeight(float weight){
-    wifi.broadcastWeight(weight);
+  wifi.broadcastWeight(weight);
 }
 
 bool Controller::hasIntervalPassed(uint32_t &previousMillis, uint32_t interval, bool to_min) {
