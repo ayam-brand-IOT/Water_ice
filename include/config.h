@@ -22,16 +22,15 @@
 #define SERVER_PORT 52200
 #define SERVER_IP   "192.168.1.7"
 
-// #define SERVER_IP   "169.254.207.197"
 
 //Configuración de red
-#define MAC_ADDRESS { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
+#define HAS_STATIC_IP                               //TURN ON THE STATIC IP
 #define IP_ADDRESS { 192, 168, 100, 29 }
 #define GATEWAY_ADDRESS { 192, 168, 1, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 
-//TURN ON THE STATIC IP
-#define HAS_STATIC_IP
+
+
 
 #define U_SSID "MFP-Guest24"
 #define U_PASS "testing123"
