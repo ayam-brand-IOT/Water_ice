@@ -4,14 +4,26 @@ Scheduler runner;
 Controller controller;
 TaskHandle_t detached_task;
 
+// Function prototypes
+void startICEPump();
+void stopICEPump();
+
 // Stages
 Stage stage_1(2, initStage1, destroyStage1);
 Stage stage_2(2, initStage2, destroyStage2);
 Stage stage_3(2, initStage3, destroyStage3);
 
 Task buttons_routine(20, TASK_FOREVER, &onButtonPressed);
-Task stop_ice_routine(100, TASK_ONCE,[]() {
+Task ice_start_pulse(200, TASK_ONCE, []() {
   controller.writeDigitalOutput(ICE_PUMP, LOW);
+  Serial.println("Ice pump start pulse ended");
+});
+Task ice_stop_pulse(200, TASK_ONCE, []() {
+  controller.writeDigitalOutput(ICE_STOP, LOW);
+  Serial.println("Ice pump stop pulse ended");
+});
+Task auto_stop_ice_routine(100, TASK_ONCE, []() {
+  stopICEPump();
   Serial.println("Ice pump turned off");
 });
 Task stop_water_routine(100, TASK_ONCE, []() {
@@ -44,8 +56,18 @@ uint32_t iceTimer = 0UL;
 uint32_t waterTimer = 0UL;
 tote_data tote = {0, 0, 0, 0, 0};
 
+void startICEPump() {
+  controller.writeDigitalOutput(ICE_PUMP, HIGH);
+  ice_start_pulse.restartDelayed(200);
+}
+
+void stopICEPump() {
+  controller.writeDigitalOutput(ICE_STOP, HIGH);
+  ice_stop_pulse.restartDelayed(200);
+}
+
 void setup() {
-  for (auto &b : buttons) b.button.begin(); 
+  for (auto &b : buttons) b.button.begin();
 
   controller.init();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
@@ -56,7 +78,9 @@ void setup() {
 
   runner.init();
   runner.addTask(buttons_routine);
-  runner.addTask(stop_ice_routine);
+  runner.addTask(ice_start_pulse);
+  runner.addTask(ice_stop_pulse);
+  runner.addTask(auto_stop_ice_routine);
   runner.addTask(stop_water_routine);
   runner.addTask(broadcast_weight_routine);
   buttons_routine.enable();
@@ -197,9 +221,7 @@ void initStage1() {
 void initStage2() {
   Serial.println("Stage 2 Filling Ice");
   controller.setTare();
-  controller.writeDigitalOutput(ICE_PUMP, HIGH);
-  delay(200);
-  controller.writeDigitalOutput(ICE_PUMP, LOW);
+  startICEPump();
 }
 
 void initStage3() {
@@ -231,9 +253,7 @@ void destroyStage2() {
 
   tote.ice_weight = ice_weight;
 
-  controller.writeDigitalOutput(ICE_STOP, HIGH);
-  delay(200);
-  controller.writeDigitalOutput(ICE_STOP, LOW);
+  stopICEPump();
 
   Serial.println("Ice filling completed");
   Serial.println("Stage 2 destroyed");
@@ -296,18 +316,16 @@ void onStart() {
 void onStop() {
   Serial.println("STOP");
   controller.setState(IDLE);
-
-  controller.writeDigitalOutput(ICE_PUMP, LOW);
+  stopICEPump();
   controller.writeDigitalOutput(WATER_PUMP, LOW);
-
-  stop_ice_routine.cancel();
+  auto_stop_ice_routine.cancel();
   stop_water_routine.cancel();
 }
 
 void onManualIce() {
   Serial.println("Manual Ice");
-  controller.writeDigitalOutput(ICE_PUMP, HIGH);
-  stop_ice_routine.restartDelayed(5000);
+  startICEPump();
+  auto_stop_ice_routine.restartDelayed(5000);
 }
 
 void onManualWater() {
