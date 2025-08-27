@@ -26,8 +26,8 @@
 
 //Configuración de red
 #define MAC_ADDRESS { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
-#define IP_ADDRESS { 192, 168, 1, 5 }
-#define GATEWAY_ADDRESS { 192, 168, 1, 1 }
+#define IP_ADDRESS { 192, 168, 100, 29 }
+#define GATEWAY_ADDRESS { 192, 168, 1, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 
 //TURN ON THE STATIC IP
