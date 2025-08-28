@@ -58,12 +58,12 @@ tote_data tote = {0, 0, 0, 0, 0};
 
 void startICEPump() {
   controller.writeDigitalOutput(ICE_PUMP, HIGH);
-  ice_start_pulse.restartDelayed(200);
+  ice_start_pulse.restartDelayed(2000);
 }
 
 void stopICEPump() {
   controller.writeDigitalOutput(ICE_STOP, HIGH);
-  ice_stop_pulse.restartDelayed(200);
+  ice_stop_pulse.restartDelayed(2000);
 }
 
 void setup() {
@@ -344,9 +344,11 @@ void readButtonTypeFromSerial() {
       Serial.println(buttonType);
       handleInputs(static_cast<button_type>(buttonType));
     }
+
     else {
       Serial.println("Invalid button type. Please enter a number between 0 and 5.");
     }
+    
   }
 }
 

@@ -77,11 +77,11 @@ float Controller::getWeight(){
   String weight = marel.getWeight(); // p.ej. "0.00" o "76.4"
   weight.trim();                     // quita \r\n y espacios
   weight.replace(',', '.');          // por si llega con coma
-  DEBUG_M(("Raw Weight: " + weight).c_str());
+  // DEBUG_M(("Raw Weight: " + weight).c_str());
 
   float val = weight.toFloat();
   // Muestra con 2 decimales sí o sí
-  Serial.printf("Parsed Weight: %.2f\n", val); // o Serial.println(val, 2);
+  // Serial.printf("Parsed Weight: %.2f\n", val); // o Serial.println(val, 2);
   return val;
 
 }
@@ -89,7 +89,11 @@ float Controller::getWeight(){
 
 
 void Controller::setUpDigitalOutputs(){
-  for (auto &output : outputs) pinMode(output, OUTPUT);
+  for (auto &output : outputs) {
+    pinMode(output, OUTPUT);
+    digitalWrite(output, LOW); // Asegurarse de que estén apagados al inicio
+  }
+
 }
 
 void Controller::setUpRTC(){

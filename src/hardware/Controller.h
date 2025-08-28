@@ -24,7 +24,7 @@ private:
     EdgeBox_ESP_100 edgebox;
     ControllerState state = IDLE;
 
-    const uint8_t outputs[2] = {WATER_PUMP, ICE_PUMP};
+    const uint8_t outputs[3] = {WATER_PUMP, ICE_PUMP, ICE_STOP};
 
     void setUpIOS();
     void setUpI2C();
