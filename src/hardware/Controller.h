@@ -19,6 +19,20 @@ enum ControllerState {
     TOTE_READY
 };
 
+enum class ToteState {
+  IDLE,
+  WAITING_START,
+  DISPENSING_ICE,
+  DISPENSING_WATER,
+  WAITING_TOTE_ID,
+  COMPLETED,
+  CANCELED,
+  ERROR
+};
+
+static ToteState toteState = ToteState::IDLE;
+
+
 class Controller {
 private:
     EdgeBox_ESP_100 edgebox;

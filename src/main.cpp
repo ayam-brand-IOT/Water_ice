@@ -96,6 +96,9 @@ void loop() {
 
   runner.execute();
 
+  // handleToteState();
+
+
   switch (current_state) {
     case IDLE:
       // FUCK off
@@ -114,6 +117,45 @@ void loop() {
       break;
   }
 }
+
+void handleToteState(){
+    switch (toteState) {
+    case ToteState::IDLE:
+      // TODO: esperar comando start
+      break;
+
+    case ToteState::WAITING_START:
+      // TODO
+      break;
+
+    case ToteState::DISPENSING_WATER:
+      onWaterFilling();
+
+      break;
+    
+    case ToteState::DISPENSING_ICE:
+      onIceFilling();
+      break;
+
+    case ToteState::WAITING_TOTE_ID:
+      // TODO
+      break;
+
+    case ToteState::COMPLETED:
+      onToteReady();
+
+      break;
+
+    case ToteState::CANCELED:
+      // TODO: limpiar y volver a IDLE
+      break;
+
+    case ToteState::ERROR:
+      // TODO: mostrar error, esperar intervención
+      break;
+  }
+}
+
 
 void communicationTask(void* pvParameters) {
   for (;;) {

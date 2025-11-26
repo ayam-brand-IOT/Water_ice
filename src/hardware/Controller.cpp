@@ -58,6 +58,9 @@ void Controller::connectToWiFi(bool web_server, bool web_serial, bool OTA) {
 
 void Controller::setState(ControllerState state){
   this->state = state;
+  toteState = ToteState::DISPENSING_ICE;
+  
+  DEBUG_M(("State changed from " + String((int)this->state) + " to " + String((int)state)).c_str());
 }
 
 ControllerState Controller::getState(){
