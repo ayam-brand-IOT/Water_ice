@@ -34,10 +34,18 @@ Task stop_water_routine(100, TASK_ONCE, []() {
 Task broadcast_weight_routine(200, TASK_FOREVER, []() {
   static float last_weight = 0;
   static uint32_t last_broadcast = 0;
-  const float current_weight = controller.getWeight();
   const uint32_t now = millis();
 
-  if (current_weight != last_weight || (now - last_broadcast) >= 1000) {
+  const float current_weight = controller.getWeight();
+  if (isnan(current_weight)) {
+    Serial.println("Weight reading is NaN, skipping broadcast");
+    return;
+  }
+    const float DELTA = 0.02f;  // 20 g de cambio mínimo
+    bool weight_changed = isnan(last_weight) || fabs(current_weight - last_weight) >= DELTA;
+    bool time_elapsed   = (now - last_broadcast) >= 1000;
+
+  if (weight_changed || time_elapsed) {
     last_weight = current_weight;
     last_broadcast = now;
     controller.broadcastWeight(current_weight);
@@ -72,7 +80,7 @@ void setup() {
   controller.init();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
   controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
-  controller.wifi.addToteIDcallback(&setToteID);
+  controller.wifi.addToteIDcallback(&setToteIdFromUI);
 
   xTaskCreatePinnedToCore(communicationTask, "communicationTask", 12000, NULL, 1, &detached_task, 0);
 
@@ -92,62 +100,35 @@ void setup() {
 
 void loop() {
   delay(20);
-  const ControllerState current_state = controller.getState();
-
   runner.execute();
-
-  // handleToteState();
-
-
-  switch (current_state) {
-    case IDLE:
-      // FUCK off
-
-      break;  
-    case WATER_FILLING:
-      onWaterFilling();
-      break;
-    case ICE_FILLING:
-      onIceFilling();
-      break;
-    case TOTE_READY:
-      onToteReady();
-      break;
-    default:
-      break;
-  }
+  handleToteState();
 }
 
 void handleToteState(){
     switch (toteState) {
     case ToteState::IDLE:
-      // TODO: esperar comando start
-      break;
-
-    case ToteState::WAITING_START:
-      // TODO
-      break;
-
-    case ToteState::DISPENSING_WATER:
-      onWaterFilling();
-
+      // Esperar comando start (botón)
+      onIDLE();
       break;
     
     case ToteState::DISPENSING_ICE:
       onIceFilling();
       break;
 
+    case ToteState::DISPENSING_WATER:
+      onWaterFilling();
+      break;
+
     case ToteState::WAITING_TOTE_ID:
-      // TODO
+      onWaitingToteID();
       break;
 
     case ToteState::COMPLETED:
       onToteReady();
-
       break;
 
     case ToteState::CANCELED:
-      // TODO: limpiar y volver a IDLE
+      onCanceled();
       break;
 
     case ToteState::ERROR:
@@ -170,50 +151,53 @@ void communicationTask(void* pvParameters) {
 }
 
 void onWaterFilling() {
-  // Init stage 1
-  if (stage_1.getCurrentStep() == 0) {
-    stage_1.init();
-    stage_1.nextStep();
+  // Init stage 2 (antes era stage 1)
+  if (stage_2.getCurrentStep() == 0) {
+    stage_2.init();
+    stage_2.nextStep();
     waterTimer = millis();
   }
 
-  else if (stage_1.getCurrentStep() == 1){
+  else if (stage_2.getCurrentStep() == 1){
     if (!controller.hasIntervalPassed(waterTimer, 4000, false)) {
       Serial.print(".");
       return;
     }
     Serial.println();
 
-    stage_1.nextStep();
-  }
-
-
-  if (stage_1.getCurrentStep() == 2) {
-    stage_1.destroy();
-    controller.setState(ICE_FILLING);
-  }
-}
-
-void onIceFilling() {
-  // Init stage 2
-  if (stage_2.getCurrentStep() == 0) {
-    stage_2.init();
-    stage_2.nextStep();
-    iceTimer = millis();
-  }
-
-  else if (stage_2.getCurrentStep() == 1){
-    if (!controller.hasIntervalPassed(iceTimer, 4000, false)) {
-      Serial.print(".");
-      return;
-    }
-    Serial.println();
     stage_2.nextStep();
   }
 
   if (stage_2.getCurrentStep() == 2) {
     stage_2.destroy();
-    controller.setState(TOTE_READY);
+    // Después del agua, esperar el ID del tote
+    toteState = ToteState::WAITING_TOTE_ID;
+    Serial.println("Transitioning to WAITING_TOTE_ID");
+  }
+}
+
+void onIceFilling() {
+  // Init stage 1 (ahora el hielo es primero)
+  if (stage_1.getCurrentStep() == 0) {
+    stage_1.init();
+    stage_1.nextStep();
+    iceTimer = millis();
+  }
+
+  else if (stage_1.getCurrentStep() == 1){
+    if (!controller.hasIntervalPassed(iceTimer, 4000, false)) {
+      Serial.print(".");
+      return;
+    }
+    Serial.println();
+    stage_1.nextStep();
+  }
+
+  if (stage_1.getCurrentStep() == 2) {
+    stage_1.destroy();
+    // Después del hielo, llenar agua
+    toteState = ToteState::DISPENSING_WATER;
+    Serial.println("Transitioning to DISPENSING_WATER");
   }
 }
 
@@ -221,30 +205,20 @@ void onToteReady() {
   // Init stage 3
   if (stage_3.getCurrentStep() == 0) {
     stage_3.init();
-
-
-    if (tote.id[0] == '\0') {
-      Serial.println("Tote ID not set");
-      delay(1000);
-    }
-
-    else {
-      Serial.println("Waiting for confirmation..."); 
-      delay(1000);
-      stage_3.nextStep();
-    }
+    stage_3.nextStep();
   }
 
   if (stage_3.getCurrentStep() == 1) {
     delay(1000);
-    Serial.println("Confirmed!");
+    Serial.println("Tote completed and sent!");
     stage_3.nextStep();
   }
 
-
   if (stage_3.getCurrentStep() == 2) {
     stage_3.destroy();
-    controller.setState(IDLE);
+    // Volver a IDLE para esperar el siguiente tote
+    toteState = ToteState::IDLE;
+    Serial.println("\n=== Ready for next tote ===");
   }
 }
 
@@ -254,16 +228,15 @@ void onButtonPressed() {
 }
 
 void initStage1() {
-  Serial.println("Stage 1 Filling Water");
-  tote.tote_weight = controller.getWeight();
-  controller.setTare();
-  controller.writeDigitalOutput(WATER_PUMP, HIGH);
+  Serial.println("\n=== Stage 1: Dispensing Ice ===");
+  // controller.setTare();
+  startICEPump();
 }
 
 void initStage2() {
-  Serial.println("Stage 2 Filling Ice");
-  controller.setTare();
-  startICEPump();
+  Serial.println("\n=== Stage 2: Filling Water ===");
+  // controller.setTare();
+  controller.writeDigitalOutput(WATER_PUMP, HIGH);
 }
 
 void initStage3() {
@@ -272,57 +245,78 @@ void initStage3() {
 }
 
 void destroyStage1() {
-
-  const uint32_t water_weight = controller.getWeight();
-  Serial.print("Water: ");
-  Serial.print(water_weight);
+  const uint32_t ice_kg = controller.getWeight();
+  Serial.print("Ice dispensed: ");
+  Serial.print(ice_kg);
   Serial.println(" kg");
 
-  tote.water_weight = water_weight;
+  tote.ice_kg = ice_kg - tote.tote_kg;
 
-  controller.writeDigitalOutput(WATER_PUMP, LOW);
+  stopICEPump();
 
-  Serial.println("Water filling completed");
+  Serial.println("Ice dispensing completed");
   Serial.println("Stage 1 destroyed");
 }
 
 void destroyStage2() {
-  const uint32_t ice_weight = controller.getWeight();
+  const uint32_t water_out_kg = controller.getWeight();
 
-  Serial.print("Ice: ");
-  Serial.print(ice_weight);
+  Serial.print("Water filled: ");
+  Serial.print(water_out_kg);
   Serial.println(" kg");
 
-  tote.ice_weight = ice_weight;
+  tote.water_kg = water_out_kg - tote.tote_kg - tote.ice_kg;
 
-  stopICEPump();
+  controller.writeDigitalOutput(WATER_PUMP, LOW);
 
-  Serial.println("Ice filling completed");
+  Serial.println("Water filling completed");
   Serial.println("Stage 2 destroyed");
 } 
 
 void destroyStage3() {
-  // show all the data
-  Serial.print("Water: ");
-  Serial.print(tote.water_weight);
+  // Mostrar todos los datos del tote completado
+  Serial.println("\n=== Tote Summary ===");
+  Serial.print("ID: ");
+  Serial.println(tote.id);
+  Serial.print("Tote: ");
+  Serial.print(tote.tote_kg);
   Serial.println(" kg");
   Serial.print("Ice: ");
-  Serial.print(tote.ice_weight);
+  Serial.print(tote.ice_kg);
   Serial.println(" kg");
-  Serial.print("Tote: ");
-  Serial.print(tote.tote_weight);
+  Serial.print("Water: ");
+  Serial.print(tote.water_kg);
   Serial.println(" kg");
   Serial.print("Raw: ");
   Serial.print(controller.getWeight());
   Serial.println(" kg");
-  Serial.print("ID: ");
-  Serial.print(tote.id);
-  Serial.println("");
-  //reset the tare
+  Serial.println("==================\n");
+  
+  // Calcular raw_kg y water_kg
+  uint32_t raw_kg = controller.getWeight();
+  
+  // Enviar datos al backend con POST
+  bool success = createToteInBackend(
+    tote.id,
+    tote.tote_kg,
+    tote.water_kg,
+    tote.ice_kg,
+    raw_kg
+  );
+  
+  if (success) {
+    Serial.println("✓ Tote created in backend successfully!");
+  } else {
+    Serial.println("✗ Failed to create tote in backend");
+    Serial.println("  Please check backend connection or try again.");
+  }
+  
+  // Reset the tare
   controller.setTare();
+  
+  // Limpiar datos para el siguiente tote
   tote = {0, 0, 0, 0, 0};
   Serial.println("Stage 3 destroyed");
-
 }
 
 button_type handleInputs(button_type override){
@@ -337,31 +331,42 @@ button_type handleInputs(button_type override){
 }
 
 void onStart() {
-  if (controller.getState() != IDLE) {
-    Serial.println("Already started");
+  if (toteState != ToteState::IDLE) {
+    Serial.println("Already in process");
     return;
   }
 
-  const uint16_t current_weight = true ? controller.getWeight() : MIN_WEIGHT - 1;
+  const uint16_t current_weight = controller.getWeight();
 
   if(current_weight < MIN_WEIGHT) {
-    Serial.println("Weight is negative");
+    Serial.println("Weight is too low to start");
     return;
   }
 
-  Serial.println("START");
+  Serial.println("\n=== System Started ===");
+  Serial.print("Initial weight: ");
+  Serial.print(current_weight);
+  Serial.println(" kg");
+  
+  tote.tote_kg = current_weight;
   controller.setTare();
 
-  controller.setState(WATER_FILLING);
+  // Iniciar con dispensado de hielo
+  toteState = ToteState::DISPENSING_ICE;
+  Serial.println("Transitioning to DISPENSING_ICE");
 }
 
 void onStop() {
-  Serial.println("STOP");
-  controller.setState(IDLE);
+  Serial.println("\n=== STOP pressed ===");
+  
+  // Detener todas las bombas
   stopICEPump();
   controller.writeDigitalOutput(WATER_PUMP, LOW);
   auto_stop_ice_routine.cancel();
   stop_water_routine.cancel();
+  
+  // Cancelar el proceso actual
+  toteState = ToteState::CANCELED;
 }
 
 void onManualIce() {
@@ -403,4 +408,133 @@ void setToteID(const String& id) {
   tote.id[ID_SIZE - 1] = '\0'; // Ensure null termination
   Serial.print("Tote ID set to: ");
   Serial.println(tote.id);
+}
+
+bool setToteIdFromUI(const String& toteId) {
+  if (toteState != ToteState::WAITING_TOTE_ID) {
+    Serial.println("Cannot set ID, not in WAITING_TOTE_ID state");
+    return false;
+  }
+
+  // Copiar ID al struct tote
+  memset(tote.id, 0, sizeof(tote.id));
+  toteId.substring(0, sizeof(tote.id)-1).toCharArray(tote.id, sizeof(tote.id));
+
+  Serial.print("Tote ID set to: ");
+  Serial.println(tote.id);
+
+  // Transición a COMPLETED
+  toteState = ToteState::COMPLETED;
+  return true;
+}
+
+// ==================== New Functions ====================
+
+void onIDLE() {
+  // En IDLE esperamos el botón START
+  // No hay nada que hacer aquí, el botón START llama a onStart()
+}
+
+void onWaitingToteID() {
+  static uint32_t lastPrompt = 0;
+  
+  // Mostrar prompt cada 3 segundos
+  if (millis() - lastPrompt > 3000) {
+    Serial.println("\n╔════════════════════════════════════╗");
+    Serial.println("║   WAITING FOR TOTE ID FROM UI      ║");
+    Serial.println("╠════════════════════════════════════╣");
+    Serial.println("║ Tote:  " + String(tote.tote_kg) + " kg");
+    Serial.println("║ Ice:   " + String(tote.ice_kg) + " kg");
+    Serial.println("║ Water: " + String(tote.water_kg) + " kg");
+    Serial.println("╠════════════════════════════════════╣");
+    Serial.println("║ Enter Tote ID via web interface   ║");
+    Serial.println("╚════════════════════════════════════╝\n");
+    lastPrompt = millis();
+  }
+  
+  // La transición a COMPLETED se hace desde setToteIdFromUI
+}
+
+void onCanceled() {
+  Serial.println("Tote canceled, cleaning up...");
+  
+  // Detener bombas
+  stopICEPump();
+  controller.writeDigitalOutput(WATER_PUMP, LOW);
+  
+  // Limpiar datos
+  tote = {0, 0, 0, 0, 0};
+  controller.setTare();
+  
+  // Resetear stages
+  stage_1.destroy();
+  stage_2.destroy();
+  stage_3.destroy();
+  
+  // Volver a IDLE
+  toteState = ToteState::IDLE;
+  Serial.println("Returned to IDLE");
+}
+
+// ==================== Backend API Functions ====================
+
+bool createToteInBackend(const char* toteId, uint32_t tote_kg, uint32_t water_kg, uint32_t ice_kg, uint32_t raw_kg) {
+  if (!controller.isWiFiConnected()) {
+    Serial.println("WiFi not connected, cannot create tote in backend");
+    return false;
+  }
+
+  HTTPClient http;
+  String url = String(BACKEND_URL) + "/api/totes";
+  
+  Serial.println("\n=== Creating Tote in Backend ===");
+  Serial.print("POST: ");
+  Serial.println(url);
+  
+  // Create JSON payload
+  DynamicJsonDocument doc(512);
+  doc["tote_id"] = toteId;
+  doc["tote_kg"] = tote_kg;
+  doc["water_kg"] = water_kg;
+  doc["ice_kg"] = ice_kg;
+  doc["raw_kg"] = raw_kg;
+  
+  String jsonPayload;
+  serializeJson(doc, jsonPayload);
+  
+  Serial.print("Payload: ");
+  Serial.println(jsonPayload);
+  
+  http.begin(url);
+  http.addHeader("Content-Type", "application/json");
+  http.setTimeout(10000); // 10 seconds timeout
+  
+  int httpCode = http.POST(jsonPayload);
+  
+  if (httpCode > 0) {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpCode);
+    
+    String response = http.getString();
+    Serial.print("Response: ");
+    Serial.println(response);
+    
+    if (httpCode == 201) {
+      Serial.println("Tote created in backend successfully!");
+      http.end();
+      return true;
+    }
+    else if (httpCode == 409) {
+      Serial.println("Tote ID already exists in backend (409 Conflict)");
+      http.end();
+      return false;
+    }
+  }
+  else {
+    Serial.print("HTTP POST failed, error: ");
+    Serial.println(http.errorToString(httpCode).c_str());
+  }
+  
+  http.end();
+  return false;
 }

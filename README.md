@@ -201,8 +201,8 @@ MAC Address: DE:AD:BE:EF:FE:ED
 ```cpp
 typedef struct {
   char id[32];              // ID único del tote
-  uint32_t water_weight;    // Peso del agua (kg)
-  uint32_t ice_weight;      // Peso del hielo (kg)
+  uint32_t water_out_kg;    // Peso del agua (kg)
+  uint32_t ice_out_kg;      // Peso del hielo (kg)
   uint32_t tote_weight;     // Peso del tote vacío (kg)
   uint32_t raw_weight;      // Peso total actual (kg)
 } tote_data;

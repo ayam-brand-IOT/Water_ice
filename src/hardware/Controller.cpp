@@ -77,15 +77,17 @@ bool Controller::setTare(){
 }
 
 float Controller::getWeight(){
-  String weight = marel.getWeight(); // p.ej. "0.00" o "76.4"
-  weight.trim();                     // quita \r\n y espacios
-  weight.replace(',', '.');          // por si llega con coma
-  DEBUG_M(("Raw Weight: " + weight).c_str());
+  float weight = marel.getWeightKg(); // p.ej. "0.00" o "76.4"
+  DEBUG_M(("Raw Weight: " + String(weight)).c_str());
 
-  float val = weight.toFloat();
+  if (isnan(weight)) {
+    DEBUG_M("Failed to get weight from Marel");
+    return NAN;
+  }
+
   // Muestra con 2 decimales sí o sí
-  Serial.printf("Parsed Weight: %.2f\n", val); // o Serial.println(val, 2);
-  return val;
+  Serial.printf("Parsed Weight: %.2f\n", weight); // o Serial.println(val, 2);
+  return weight;
 
 }
 

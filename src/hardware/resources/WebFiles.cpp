@@ -204,21 +204,23 @@ const char* INDEX_HTML = R"rawliteral(
           statusMsg.textContent = '';
           statusMsg.className = '';
           fetch('/register_pallet', {
-            method: 'POST',
+          method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ id: palletId })
           })
-          .then(res => res.ok ? res.text() : Promise.reject(res))
-          .then(data => {
-            statusMsg.textContent = data.message || 'Tote registered successfully.';
+          .then(async res => {
+            const text = await res.text();
+            if (!res.ok) throw new Error(text || 'Error registering Tote.');
+            return text || 'Tote registered successfully.';
+          })
+          .then(msg => {
+            statusMsg.textContent = msg;
             statusMsg.className = 'status status-success';
             document.getElementById('palletForm').reset();
             addRecentId(palletId);
           })
-          .catch(async err => {
-            let msg = "Error registering Tote.";
-            try { msg = await err.text(); } catch(_) {}
-            statusMsg.textContent = msg;
+          .catch(err => {
+            statusMsg.textContent = err.message || 'Error registering Tote.';
             statusMsg.className = 'status status-error';
           });
         });

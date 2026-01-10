@@ -6,6 +6,11 @@
 constexpr uint16_t WEIGHT_ID = 85; 
 constexpr uint16_t TARE_ID   = 113;
 
+struct WeightReading {
+    bool ok;
+    float kg;
+};
+
 class MarelClient {
 public:
     MarelClient(const char* serverIp, uint16_t serverPort, byte mac[], IPAddress ip, IPAddress gateway, IPAddress subnet, uint8_t csPin = 10);
@@ -30,6 +35,10 @@ public:
     void setZero();
 
     String getWeight();
+
+    float getWeightKg();
+
+    float parseWeightKg(const String& response);
 
     String getTare();
 

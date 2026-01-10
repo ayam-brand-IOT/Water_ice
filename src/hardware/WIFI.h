@@ -42,7 +42,7 @@ class WIFI {
     void loopWS();
     void broadcastWeight(float weight);
 
-    void addToteIDcallback(void (*callback)(const String&)) {
+    void addToteIDcallback(bool (*callback)(const String&)) {
       if (callback == NULL) {
         DEBUG("Tote ID callback is NULL");
         return;
@@ -65,7 +65,7 @@ class WIFI {
     char hostname[HOSTNAME_SIZE];  
     char static_ip[IP_ADDRESS_SIZE];
 
-    void (*toteIDCallback)(const String&) = NULL;
+    bool (*toteIDCallback)(const String&) = NULL;
     bool last_connection_state = false;
     void DEBUG(const char *message);
     void ERROR(ErrorType error);

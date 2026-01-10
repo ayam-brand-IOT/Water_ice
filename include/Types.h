@@ -5,10 +5,10 @@
 
 typedef struct {
   char id[ID_SIZE];
-  uint32_t water_weight;
-  uint32_t ice_weight;
-  uint32_t tote_weight;
-  uint32_t raw_weight;
+  uint32_t water_kg;
+  uint32_t ice_kg;
+  uint32_t tote_kg;
+  uint32_t raw_kg;
 } tote_data;
 
 enum button_type {

@@ -100,15 +100,24 @@ void WIFI::setUpWebServer(bool brigeSerial){
 
   server.on("/register_pallet", HTTP_POST, [&](AsyncWebServerRequest *request) {
     if(!checkAuth(request)) return;
-    String palletId = request->arg("id");
-    if (palletId.length() > 0) {
-      Serial.println("Pallet ID set to: " + palletId);
-      toteIDCallback(palletId);
 
-      request->send(200, "text/plain", "Pallet ID set to: " + palletId);
-    } else {
-      request->send(400, "text/plain", "Invalid pallet ID");
+    if (!request->hasParam("id", true)) {
+      request->send(400, "text/plain", "Missing id");
+      return;
     }
+
+    // String palletId = request->arg("id");
+    String id = request->getParam("id", true)->value();
+
+
+    bool ok = toteIDCallback(id);
+    if (!ok) {
+      // No estábamos en WAITING_TOTE_ID
+      request->send(409, "text/plain", "Tote not ready to receive ID.");
+      return;
+    }
+
+    request->send(200, "text/plain", "Tote registered successfully.");
   });
 
 

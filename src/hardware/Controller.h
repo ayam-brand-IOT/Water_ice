@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include "marel.h"
 #include "WIFI.h"
+#include "Types.h"
 #include <Preferences.h>
 #include "EdgeBox_ESP_100.h"
 
@@ -21,7 +22,6 @@ enum ControllerState {
 
 enum class ToteState {
   IDLE,
-  WAITING_START,
   DISPENSING_ICE,
   DISPENSING_WATER,
   WAITING_TOTE_ID,
@@ -30,6 +30,21 @@ enum class ToteState {
   ERROR
 };
 
+struct ToteContext {
+  String toteId;        // lo captura operador después
+  String lotNo;         // lo puedes pasar desde UI
+  float targetIceKg = 0;
+  float targetWaterKg = 0;
+
+  float initialKg = NAN;     // peso al inicio (tote vacío o casi vacío)
+  float lastKg = NAN;        // última lectura
+  float iceKg = 0;           // peso de hielo realmente dispensado
+  float waterKg = 0;         // peso de agua realmente dispensada
+
+  unsigned long lastUpdateMs = 0;
+};
+
+extern tote_data currentTote;
 static ToteState toteState = ToteState::IDLE;
 
 

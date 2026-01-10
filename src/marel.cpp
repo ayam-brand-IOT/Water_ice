@@ -90,6 +90,22 @@ String MarelClient::getWeight(){
     return castWeightResponse(response);
 }
 
+float MarelClient::getWeightKg(){
+    String response = readValue(WEIGHT_ID, 2);
+
+    if (response.length() == 0) {
+        _client.stop();
+        if (!connectToServer()) {
+            return NAN;
+        }
+        response = readValue(WEIGHT_ID, 2);
+        if (response.length() == 0) {
+            return NAN;
+        }
+    }
+    return parseWeightKg(response);  // nueva función numérica
+}
+
 String MarelClient::getTare(){
     String response = readValue(TARE_ID, 2);
 
@@ -103,4 +119,15 @@ String MarelClient::castWeightResponse(const String& response) {
     return response.substring(start, end);
 }
 
+float MarelClient::parseWeightKg(const String& resp) {
+    int colon = resp.lastIndexOf(':');
+    if (colon < 0) return NAN;
+
+    String num = resp.substring(colon + 1);
+    num.replace("kg", "");
+    num.trim();
+    if (num.length() == 0) return NAN;
+
+    return num.toFloat();  // kg
+}
 
