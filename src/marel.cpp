@@ -56,6 +56,7 @@ String MarelClient::readValue(uint16_t modelID, uint8_t dimension) {
     // Ejemplo: .R100:2\n
     String cmd = ".R" + String(modelID) + ":" + String(dimension) + "\n";
     String response = sendCommand(cmd);
+    Serial.println(("Response for readValue: " + response).c_str());
     // example of response .D.85.2:-2.00kg"
     int start = response.indexOf(":") + 1;
     int end = response.indexOf("kg");
@@ -92,6 +93,7 @@ String MarelClient::getWeight(){
 
 float MarelClient::getWeightKg(){
     String response = readValue(WEIGHT_ID, 2);
+
 
     if (response.length() == 0) {
         _client.stop();
