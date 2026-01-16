@@ -39,8 +39,8 @@
 // #define U_SSID "MFP-Guest24"
 // #define U_PASS "testing123"
 
-#define U_SSID "tapOmeter"
-#define U_PASS "S=klogw2"
+#define U_SSID "Pez Gordo"
+#define U_PASS "SardinaMacarena2021"
 
 // #define U_SSID "CFPP (Test)"
 // #define U_PASS "cfpptest"

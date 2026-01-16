@@ -100,6 +100,7 @@ void setup() {
 
 void loop() {
   delay(20);
+  controller.task();  // Process Modbus communication
   runner.execute();
   handleToteState();
 }

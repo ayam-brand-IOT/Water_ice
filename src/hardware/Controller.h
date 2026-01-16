@@ -70,6 +70,7 @@ public:
     void init();
     bool setTare();
     void setUpRTC();
+    void task();  // Process Modbus communication
     
     void loopOTA();
     void WiFiLoop();

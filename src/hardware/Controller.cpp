@@ -1,11 +1,9 @@
 #include "Controller.h"
 
-byte mac[] = MAC_ADDRESS;
-IPAddress ip(CLIENT_IP);
-IPAddress gateway(CLIENT_GATEWAY);
-IPAddress subnet(SUBNET_ADDRESS);
-
-MarelClient marel(SERVER_IP, SERVER_PORT, mac, ip, gateway, subnet);
+// Configuración Modbus RTU para RS-485
+// Pines: RX=IO18 (U1RXD), TX=IO17 (U1TXD), DE/RE=IO8 (RS485_RTS)
+// Slave ID = 1 (según el simulador)
+MarelClient marel(1, 18, 17, 8);
 
 
 void Controller::init(){
@@ -91,7 +89,9 @@ float Controller::getWeight(){
 
 }
 
-
+void Controller::task(){
+  marel.task();
+}
 
 void Controller::setUpDigitalOutputs(){
   for (auto &output : outputs) pinMode(output, OUTPUT);
