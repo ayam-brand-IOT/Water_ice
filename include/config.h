@@ -21,16 +21,16 @@
 // #################### MAREL - INFO ####################
 // Datos del servidor Marel
 #define SERVER_PORT             52200
-#define SERVER_IP               "192.168.1.7"
-#define CLIENT_IP               {192, 168, 1, 29}
+#define SERVER_IP               "192.168.100.72"
+#define CLIENT_IP               {192, 168, 100, 29}
 #define CLIENT_GATEWAY          {192, 168, 1, 254}       
 #define MAC_ADDRESS             { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
 
 
 //Configuración de red
 #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
-#define IP_ADDRESS { 192, 168, 1, 29 }
-#define GATEWAY_ADDRESS { 192, 168, 1, 254 }
+#define IP_ADDRESS { 192, 168, 100, 129 }
+#define GATEWAY_ADDRESS { 192, 168, 100, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 
 //TURN ON THE STATIC IP
@@ -46,7 +46,7 @@
 // #define U_PASS "cfpptest"
 
 // ##################### BACKEND API #####################
-#define BACKEND_HOST "192.168.1.240"  // Cambiar a la IP del backend
+#define BACKEND_HOST "192.168.100.63"  // Cambiar a la IP del backend
 #define BACKEND_PORT 3000
 #define BACKEND_URL "http://" BACKEND_HOST ":3000"
 
