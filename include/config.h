@@ -5,6 +5,10 @@
 
 #define MIN_WEIGHT 5
 
+// #################### DISPENSING TARGETS ####################
+#define TARGET_ICE_KG 2.0    // Peso objetivo de hielo en kg
+#define TARGET_WATER_KG 2.0  // Peso objetivo de agua en kg
+
 // ###################### INPUTS ######################
 #define START_IO                DI_0
 #define STOP_IO                 DI_1
@@ -46,9 +50,10 @@
 // #define U_PASS "cfpptest"
 
 // ##################### BACKEND API #####################
-#define BACKEND_HOST "192.168.100.63"  // Cambiar a la IP del backend
-#define BACKEND_PORT 3000
-#define BACKEND_URL "http://" BACKEND_HOST ":3000"
+#define BACKEND_HOST "192.168.100.62"  // Cambiar a la IP del backend
+#define BACKEND_PORT 3000  // Puerto directo del backend Node.js (sin nginx)
+#define BACKEND_WS_PORT 3001
+#define BACKEND_URL "http://" BACKEND_HOST ":3000"  // Conexión directa al backend
 
 // ##################### WEB SERVER #####################
 

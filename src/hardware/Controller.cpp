@@ -75,7 +75,7 @@ bool Controller::setTare(){
 }
 
 float Controller::getWeight(){
-  float weight = marel.getWeightKg(); // p.ej. "0.00" o "76.4"
+  float weight = marel.getNetWeightKg(); // p.ej. "0.00" o "76.4" (peso neto = bruto - tara)
   DEBUG_M(("Raw Weight: " + String(weight)).c_str());
 
   if (isnan(weight)) {

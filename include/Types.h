@@ -9,6 +9,7 @@ typedef struct {
   uint32_t ice_kg;
   uint32_t tote_kg;
   uint32_t raw_kg;
+  float initial_weight;  // Peso inicial antes de dispensar (para calcular deltas sin TARE)
 } tote_data;
 
 enum button_type {

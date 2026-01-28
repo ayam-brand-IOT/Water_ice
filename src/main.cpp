@@ -3,6 +3,7 @@
 Scheduler runner;
 Controller controller;
 TaskHandle_t detached_task;
+ToteWebSocketClient wsClient;  // WebSocket client instance
 
 // Function prototypes
 void startICEPump();
@@ -48,7 +49,8 @@ Task broadcast_weight_routine(200, TASK_FOREVER, []() {
   if (weight_changed || time_elapsed) {
     last_weight = current_weight;
     last_broadcast = now;
-    controller.broadcastWeight(current_weight);
+    // Send weight via WebSocket instead of HTTP broadcast
+    wsClient.sendWeight(current_weight);
   }
 });
 
@@ -79,8 +81,11 @@ void setup() {
 
   controller.init();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
-  controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
-  controller.wifi.addToteIDcallback(&setToteIdFromUI);
+  controller.connectToWiFi(/* web_server */ false, /* web_serial */ true, /* OTA */ true);
+  
+  // Initialize WebSocket client
+  wsClient.begin(BACKEND_HOST, BACKEND_WS_PORT, "/esp32");
+  wsClient.setMessageCallback(onWebSocketMessage);
 
   xTaskCreatePinnedToCore(communicationTask, "communicationTask", 12000, NULL, 1, &detached_task, 0);
 
@@ -101,6 +106,7 @@ void setup() {
 void loop() {
   delay(20);
   controller.task();  // Process Modbus communication
+  wsClient.loop();     // Process WebSocket communication
   runner.execute();
   handleToteState();
 }
@@ -156,16 +162,25 @@ void onWaterFilling() {
   if (stage_2.getCurrentStep() == 0) {
     stage_2.init();
     stage_2.nextStep();
-    waterTimer = millis();
+    wsClient.sendStateChange("DISPENSING_WATER");
   }
 
   else if (stage_2.getCurrentStep() == 1){
-    if (!controller.hasIntervalPassed(waterTimer, 4000, false)) {
-      Serial.print(".");
+    const float current_weight = controller.getWeight();
+    const float weight_delta = current_weight - tote.initial_weight;  // Calcular delta
+    const float target_total = TARGET_ICE_KG + TARGET_WATER_KG;
+    
+    if (weight_delta < target_total) {
+      // Aún no alcanza el peso objetivo
+      static uint32_t lastPrint = 0;
+      if (millis() - lastPrint > 500) {
+        Serial.printf("Water: %.2f / %.2f kg (Total: %.2f)\r", weight_delta - TARGET_ICE_KG, TARGET_WATER_KG, weight_delta);
+        lastPrint = millis();
+      }
       return;
     }
     Serial.println();
-
+    Serial.printf("✓ Target water weight reached: %.2f kg (Total: %.2f kg)\n", weight_delta - TARGET_ICE_KG, weight_delta);
     stage_2.nextStep();
   }
 
@@ -173,6 +188,7 @@ void onWaterFilling() {
     stage_2.destroy();
     // Después del agua, esperar el ID del tote
     toteState = ToteState::WAITING_TOTE_ID;
+    wsClient.sendStateChange("WAITING_TOTE_ID");
     Serial.println("Transitioning to WAITING_TOTE_ID");
   }
 }
@@ -182,15 +198,24 @@ void onIceFilling() {
   if (stage_1.getCurrentStep() == 0) {
     stage_1.init();
     stage_1.nextStep();
-    iceTimer = millis();
+    wsClient.sendStateChange("DISPENSING_ICE");
   }
 
   else if (stage_1.getCurrentStep() == 1){
-    if (!controller.hasIntervalPassed(iceTimer, 4000, false)) {
-      Serial.print(".");
+    const float current_weight = controller.getWeight();
+    const float weight_delta = current_weight - tote.initial_weight;  // Calcular delta
+    
+    if (weight_delta < TARGET_ICE_KG) {
+      // Aún no alcanza el peso objetivo
+      static uint32_t lastPrint = 0;
+      if (millis() - lastPrint > 500) {
+        Serial.printf("Ice: %.2f / %.2f kg\r", weight_delta, TARGET_ICE_KG);
+        lastPrint = millis();
+      }
       return;
     }
     Serial.println();
+    Serial.printf("✓ Target ice weight reached: %.2f kg\n", weight_delta);
     stage_1.nextStep();
   }
 
@@ -207,6 +232,7 @@ void onToteReady() {
   if (stage_3.getCurrentStep() == 0) {
     stage_3.init();
     stage_3.nextStep();
+    wsClient.sendToteCompleted(tote.id);
   }
 
   if (stage_3.getCurrentStep() == 1) {
@@ -219,6 +245,7 @@ void onToteReady() {
     stage_3.destroy();
     // Volver a IDLE para esperar el siguiente tote
     toteState = ToteState::IDLE;
+    wsClient.sendStateChange("IDLE");
     Serial.println("\n=== Ready for next tote ===");
   }
 }
@@ -230,13 +257,16 @@ void onButtonPressed() {
 
 void initStage1() {
   Serial.println("\n=== Stage 1: Dispensing Ice ===");
-  // controller.setTare();
+  // Guardar peso inicial para calcular delta (workaround si TARE no funciona)
+  tote.initial_weight = controller.getWeight();
+  Serial.printf("Initial weight saved: %.2f kg\n", tote.initial_weight);
+  controller.setTare();  // Intentar TARE de todos modos
   startICEPump();
 }
 
 void initStage2() {
   Serial.println("\n=== Stage 2: Filling Water ===");
-  // controller.setTare();
+  // NO hacer setTare aquí - queremos medir el peso acumulativo (hielo + agua)
   controller.writeDigitalOutput(WATER_PUMP, HIGH);
 }
 
@@ -255,6 +285,9 @@ void destroyStage1() {
 
   stopICEPump();
 
+  // Enviar valor de hielo dispensado al frontend
+  wsClient.sendIceDispensed(tote.ice_kg);
+
   Serial.println("Ice dispensing completed");
   Serial.println("Stage 1 destroyed");
 }
@@ -269,6 +302,9 @@ void destroyStage2() {
   tote.water_kg = water_out_kg - tote.tote_kg - tote.ice_kg;
 
   controller.writeDigitalOutput(WATER_PUMP, LOW);
+
+  // Enviar valor de agua dispensada al frontend
+  wsClient.sendWaterDispensed(tote.water_kg);
 
   Serial.println("Water filling completed");
   Serial.println("Stage 2 destroyed");
@@ -424,8 +460,12 @@ bool setToteIdFromUI(const String& toteId) {
   Serial.print("Tote ID set to: ");
   Serial.println(tote.id);
 
+  // Send validation via WebSocket
+  wsClient.sendToteValidated(tote.id);
+
   // Transición a COMPLETED
   toteState = ToteState::COMPLETED;
+  wsClient.sendStateChange("COMPLETED");
   return true;
 }
 
@@ -538,4 +578,41 @@ bool createToteInBackend(const char* toteId, uint32_t tote_kg, uint32_t water_kg
   
   http.end();
   return false;
+}
+
+// WebSocket message handler
+void onWebSocketMessage(String type, JsonDocument& doc) {
+  Serial.printf("WebSocket message received: %s\n", type.c_str());
+  
+  if (type == "qr_scanned") {
+    const char* toteId = doc["toteId"];
+    if (toteId && strlen(toteId) > 0) {
+      Serial.printf("QR scanned from browser: %s\n", toteId);
+      
+      // Use setToteIdFromUI to properly handle state transition
+      if (setToteIdFromUI(String(toteId))) {
+        Serial.println("Tote ID set successfully from browser QR scan");
+      } else {
+        Serial.println("Failed to set Tote ID - may not be in WAITING_TOTE_ID state");
+        // If not in WAITING_TOTE_ID state, just save the ID for later use
+        setToteID(String(toteId));
+      }
+    }
+  }
+  else if (type == "command") {
+    const char* command = doc["command"];
+    Serial.printf("Command received: %s\n", command);
+    
+    // Handle commands from backend/browser
+    if (strcmp(command, "start") == 0) {
+      if (toteState == ToteState::IDLE) {
+        toteState = ToteState::DISPENSING_ICE;
+        wsClient.sendStateChange("DISPENSING_ICE");
+      }
+    }
+    else if (strcmp(command, "stop") == 0) {
+      toteState = ToteState::CANCELED;
+      wsClient.sendStateChange("CANCELED");
+    }
+  }
 }

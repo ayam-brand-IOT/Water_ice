@@ -4,7 +4,7 @@ const char* INDEX_HTML = R"rawliteral(
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-      <title>Revisión de Palet - Loadcell</title>
+      <title>Tote Scanner - Loadcell</title>
       <style>
         body {
           margin: 0;
@@ -33,6 +33,7 @@ const char* INDEX_HTML = R"rawliteral(
           display: flex;
           align-items: center;
           justify-content: center;
+          padding: 1rem;
         }
         .card {
           background: #fff;
@@ -64,41 +65,27 @@ const char* INDEX_HTML = R"rawliteral(
           margin-bottom: 1.5rem;
           letter-spacing: -2px;
         }
-        .form-label {
-          color: #1e293b;
-          font-weight: 500;
-          margin-bottom: 0.4rem;
-          display: block;
-        }
-        .input {
-          width: 100%;
-          font-size: 1.15rem;
-          border-radius: 8px;
-          border: 1px solid #d1d5db;
-          padding: 0.6rem 1rem;
-          margin-bottom: 1.2rem;
-          outline: none;
-          box-sizing: border-box;
-          transition: border 0.2s;
-        }
-        .input:focus {
-          border: 1.7px solid #2563eb;
-        }
         .button {
           width: 100%;
           background: #2563eb;
           color: #fff;
           border: none;
-          border-radius: 8px;
-          font-size: 1.15rem;
+          border-radius: 12px;
+          font-size: 1.3rem;
           font-weight: 600;
-          padding: 0.75rem 0;
+          padding: 1.2rem 0;
           cursor: pointer;
-          transition: background 0.18s;
-          box-shadow: 0 2px 8px #2563eb22;
+          transition: background 0.18s, transform 0.1s;
+          box-shadow: 0 4px 12px #2563eb44;
+          margin-bottom: 1rem;
         }
         .button:active {
           background: #1740b6;
+          transform: scale(0.98);
+        }
+        .button-icon {
+          font-size: 1.5rem;
+          margin-right: 0.5rem;
         }
         .status {
           margin-top: 1rem;
@@ -135,33 +122,96 @@ const char* INDEX_HTML = R"rawliteral(
           background: #fecaca;
           color: #991b1b;
         }
+        /* QR Scanner Modal */
+        .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          background-color: rgba(0,0,0,0.95);
+        }
+        .modal.active {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-direction: column;
+        }
+        .modal-content {
+          position: relative;
+          max-width: 500px;
+          width: 90%;
+        }
+        #qr-video {
+          width: 100%;
+          border-radius: 12px;
+          box-shadow: 0 0 20px rgba(37, 99, 235, 0.5);
+        }
+        .close-btn {
+          position: absolute;
+          top: -50px;
+          right: 0;
+          color: #fff;
+          font-size: 2.5rem;
+          cursor: pointer;
+          background: none;
+          border: none;
+          z-index: 10;
+        }
+        .qr-status {
+          color: #fff;
+          text-align: center;
+          margin-top: 1.5rem;
+          font-size: 1.1rem;
+          background: rgba(0,0,0,0.7);
+          padding: 1rem;
+          border-radius: 8px;
+        }
+        .recent-item {
+          padding: 0.5rem;
+          margin: 0.3rem 0;
+          background: #f1f5f9;
+          border-radius: 6px;
+          font-size: 0.95rem;
+          color: #334155;
+        }
       </style>
     </head>
     <body>
       <div class="sidebar">
         <div class="icon">⚖️</div>
-        <!-- Puedes agregar más iconos aquí -->
       </div>
       <div class="container">
         <div class="card">
           <div class="title">Ice and Water</div>
           <div class="weight-label">Actual weight (kg)</div>
           <div id="weight" class="weight-value">{{WEIGHT}}</div>
-          <form id="palletForm" autocomplete="off">
-            <label class="form-label" for="palletId">Tote ID</label>
-            <input id="palletId" class="input" type="text" required maxlength="32" placeholder="Ex. 124A09" />
-            <button type="submit" class="button">Enter Tote ID</button>
-          </form>
+          
+          <input type="file" id="qrInput" accept="image/*" capture="environment" style="display:none;">
+          <button type="button" id="qrBtn" class="button">
+            <span class="button-icon">📷</span>
+            Scan Tote QR Code
+          </button>
+          
           <div id="statusMsg"></div>
+          <canvas id="qrCanvas" style="display:none;"></canvas>
+          
           <div id="recentContainer">
-            <div class="weight-label" style="margin-top:1rem;">Last IDs</div>
-            <ul id="recentIds" style="list-style:none;padding-left:0;margin-top:0.5rem;"></ul>
+            <div class="weight-label" style="margin-top:1.5rem;">Recent Scans</div>
+            <div id="recentIds"></div>
           </div>
         </div>
       </div>
+      
       <div id="socketStatus" class="socket-bar disconnected">Socket: disconnected</div>
+      
+      <!-- jsQR Library -->
+      <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+      
       <script>
-        // === WebSocket para peso en tiempo real con reconexión ===
+        // === WebSocket para peso en tiempo real ===
         let ws;
         let reconnectDelay = 1000;
         function updateSocketStatus(isConnected) {
@@ -182,7 +232,6 @@ const char* INDEX_HTML = R"rawliteral(
           };
           ws.onmessage = (event) => {
             document.getElementById('weight').textContent = event.data || '-';
-            console.log("Weight updated:", event.data);
           };
           ws.onclose = () => {
             document.getElementById('weight').textContent = '-';
@@ -190,21 +239,18 @@ const char* INDEX_HTML = R"rawliteral(
             setTimeout(connectWS, reconnectDelay);
             reconnectDelay = Math.min(reconnectDelay * 2, 10000);
           };
-          ws.onerror = () => {
-            ws.close();
-          };
+          ws.onerror = () => ws.close();
         }
         connectWS();
     
-        // === Formulario Tote ID ===
-        document.getElementById('palletForm').addEventListener('submit', function(e) {
-          e.preventDefault();
-          const palletId = document.getElementById('palletId').value.trim();
+        // === Enviar Tote ID ===
+        function submitToteId(palletId) {
           const statusMsg = document.getElementById('statusMsg');
-          statusMsg.textContent = '';
-          statusMsg.className = '';
+          statusMsg.textContent = 'Registering...';
+          statusMsg.className = 'status';
+          
           fetch('/register_pallet', {
-          method: 'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({ id: palletId })
           })
@@ -214,30 +260,78 @@ const char* INDEX_HTML = R"rawliteral(
             return text || 'Tote registered successfully.';
           })
           .then(msg => {
-            statusMsg.textContent = msg;
+            statusMsg.textContent = '✓ ' + msg;
             statusMsg.className = 'status status-success';
-            document.getElementById('palletForm').reset();
             addRecentId(palletId);
           })
           .catch(err => {
-            statusMsg.textContent = err.message || 'Error registering Tote.';
+            statusMsg.textContent = '✗ ' + (err.message || 'Error registering Tote.');
             statusMsg.className = 'status status-error';
           });
-        });
+        }
 
+        // === Recent IDs ===
         const recentIds = [];
         const maxIds = 5;
         function addRecentId(id) {
           recentIds.unshift(id);
           if (recentIds.length > maxIds) recentIds.pop();
-          const list = document.getElementById('recentIds');
-          list.innerHTML = '';
+          const container = document.getElementById('recentIds');
+          container.innerHTML = '';
           recentIds.forEach(i => {
-            const li = document.createElement('li');
-            li.textContent = i;
-            list.appendChild(li);
+            const div = document.createElement('div');
+            div.className = 'recent-item';
+            div.textContent = i;
+            container.appendChild(div);
           });
         }
+
+        // === QR Scanner (usando File Input) ===
+        const qrBtn = document.getElementById('qrBtn');
+        const qrInput = document.getElementById('qrInput');
+        const qrCanvas = document.getElementById('qrCanvas');
+        const statusMsg = document.getElementById('statusMsg');
+
+        qrBtn.addEventListener('click', () => {
+          qrInput.click();
+        });
+
+        qrInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          statusMsg.textContent = 'Scanning QR code...';
+          statusMsg.className = 'status';
+
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = qrCanvas;
+              const context = canvas.getContext('2d');
+              
+              canvas.width = img.width;
+              canvas.height = img.height;
+              context.drawImage(img, 0, 0);
+              
+              const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+              if (code) {
+                statusMsg.textContent = '✓ QR Detected: ' + code.data;
+                statusMsg.className = 'status status-success';
+                submitToteId(code.data);
+              } else {
+                statusMsg.textContent = '✗ No QR code found. Try again with better lighting.';
+                statusMsg.className = 'status status-error';
+              }
+              
+              qrInput.value = '';
+            };
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
       </script>
     </body>
     </html>
