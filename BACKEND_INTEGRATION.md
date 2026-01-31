@@ -1,34 +1,34 @@
 # Tote Inbound - Backend Integration Update
 
-## Cambios Realizados
+## Changes Made
 
-Se ha actualizado el sistema **tote_inbound** para que tenga la misma estructura que **tote_outbound** y se integre con el backend.
+The **tote_inbound** system has been updated to have the same structure as **tote_outbound** and integrate with the backend.
 
-### 1. Estructura Unificada
+### 1. Unified Structure
 
-#### Nuevo Flujo con `ToteState`
-Ahora ambos sistemas (inbound y outbound) usan la misma máquina de estados:
+#### New Flow with `ToteState`
+Now both systems (inbound and outbound) use the same state machine:
 
 ```
 IDLE → DISPENSING_ICE → DISPENSING_WATER → WAITING_TOTE_ID → COMPLETED
 ```
 
-#### Eliminación de `ControllerState`
-- Se removió el switch basado en `ControllerState` (IDLE, WATER_FILLING, ICE_FILLING, TOTE_READY)
-- Se reemplazó con `handleToteState()` usando `ToteState`
+#### Elimination of `ControllerState`
+- Removed switch based on `ControllerState` (IDLE, WATER_FILLING, ICE_FILLING, TOTE_READY)
+- Replaced with `handleToteState()` using `ToteState`
 
-### 2. Orden de Dispensado
+### 2. Dispensing Order
 
-**Antes**: Agua → Hielo
-**Ahora**: Hielo → Agua
+**Before**: Water → Ice
+**Now**: Ice → Water
 
-#### Cambios en Stages:
-- **Stage 1** ahora dispensa **hielo** (antes era agua)
-- **Stage 2** ahora llena **agua** (antes era hielo)
+#### Changes in Stages:
+- **Stage 1** now dispenses **ice** (was water before)
+- **Stage 2** now fills **water** (was ice before)
 
-### 3. Integración con Backend
+### 3. Backend Integration
 
-#### Nueva Función: `createToteInBackend()`
+#### New Function: `createToteInBackend()`
 
 ```cpp
 bool createToteInBackend(
@@ -55,89 +55,89 @@ bool createToteInBackend(
 }
 ```
 
-**Cuándo se ejecuta**: Al finalizar el proceso (en `destroyStage3`)
+**When executed**: At process completion (in `destroyStage3`)
 
-### 4. Nuevas Funciones Implementadas
+### 4. New Implemented Functions
 
 #### `onIDLE()`
-- Estado de espera
-- No hace nada, espera el botón START
+- Waiting state
+- Does nothing, waits for START button
 
 #### `onWaitingToteID()`
-- Muestra prompt cada 3 segundos
-- Espera que el operador ingrese el ID del tote vía UI
-- Similar a outbound pero sin validación contra backend
+- Shows prompt every 3 seconds
+- Waits for operator to enter tote ID via UI
+- Similar to outbound but without backend validation
 
 #### `onCanceled()`
-- Detiene todas las bombas
-- Limpia datos
-- Resetea stages
-- Vuelve a IDLE
+- Stops all pumps
+- Clears data
+- Resets stages
+- Returns to IDLE
 
-### 5. Flujo Completo Inbound
+### 5. Complete Inbound Flow
 
 ```
 1. IDLE
-   └─> Operador presiona START
+   └─> Operator presses START
    
 2. DISPENSING_ICE
-   └─> Dispensa hielo durante 4 segundos
-   └─> Guarda ice_out_kg
+   └─> Dispenses ice for 4 seconds
+   └─> Saves ice_out_kg
    
 3. DISPENSING_WATER
-   └─> Llena agua durante 4 segundos
-   └─> Guarda water_out_kg
+   └─> Fills water for 4 seconds
+   └─> Saves water_out_kg
    
 4. WAITING_TOTE_ID
-   └─> Espera ID del operador vía UI
+   └─> Waits for operator ID via UI
    
 5. COMPLETED
-   └─> Muestra resumen
-   └─> Envía POST al backend
-   └─> Vuelve a IDLE
+   └─> Shows summary
+   └─> Sends POST to backend
+   └─> Returns to IDLE
 ```
 
-### 6. Configuración
+### 6. Configuration
 
 #### Backend URL
-En `include/config.h`:
+In `include/config.h`:
 ```cpp
 #define BACKEND_HOST "192.168.100.10"
 #define BACKEND_PORT 3000
 #define BACKEND_URL "http://" BACKEND_HOST ":3000"
 ```
 
-### 7. Comparación Inbound vs Outbound
+### 7. Inbound vs Outbound Comparison
 
-| Característica | Inbound | Outbound |
-|----------------|---------|----------|
-| Operación HTTP | POST (crear) | PUT (actualizar) |
-| Detección automática | No | Sí (peso) |
-| Inicio | Botón START | Automático |
-| Validación ID | No | Sí (GET) |
-| fish_kg | No captura | Sí captura |
-| Campos enviados | tote_kg, water_kg, ice_kg, raw_kg | fish_kg, ice_out_kg, water_out_kg, temp_out |
+| Feature | Inbound | Outbound |
+|---------|---------|----------|
+| HTTP Operation | POST (create) | PUT (update) |
+| Automatic detection | No | Yes (weight) |
+| Start | START Button | Automatic |
+| ID Validation | No | Yes (GET) |
+| fish_kg | Doesn't capture | Yes captures |
+| Fields sent | tote_kg, water_kg, ice_kg, raw_kg | fish_kg, ice_out_kg, water_out_kg, temp_out |
 
-### 8. Datos Capturados
+### 8. Captured Data
 
-#### Inbound Captura:
-- `tote_id`: ID del tote (ingresado por operador)
-- `tote_weight`: Peso inicial del tote
-- `ice_out_kg`: Peso del hielo dispensado
-- `water_out_kg`: Peso del agua agregada
-- `raw_kg`: Peso total al finalizar
+#### Inbound Captures:
+- `tote_id`: Tote ID (entered by operator)
+- `tote_weight`: Initial tote weight
+- `ice_out_kg`: Dispensed ice weight
+- `water_out_kg`: Added water weight
+- `raw_kg`: Total weight at completion
 
-**Los envía al backend con**: `water_out_kg = 0` (inicial)
+**Sends to backend with**: `water_out_kg = 0` (initial)
 
-#### Outbound Captura:
-- `fish_kg`: Peso del pescado detectado automáticamente
-- `ice_out_kg`: Peso del hielo dispensado
-- `water_out_kg`: Peso del agua agregada
-- `temp_out`: Temperatura de salida
+#### Outbound Captures:
+- `fish_kg`: Fish weight detected automatically
+- `ice_out_kg`: Dispensed ice weight
+- `water_out_kg`: Added water weight
+- `temp_out`: Output temperature
 
-**Los envía al backend**: actualiza el mismo tote creado por inbound
+**Sends to backend**: updates the same tote created by inbound
 
-### 9. Ejemplo de Logs
+### 9. Log Example
 
 ```
 === System Started ===
@@ -185,23 +185,23 @@ HTTP Response code: 201
 === Ready for next tote ===
 ```
 
-### 10. Flujo Completo del Sistema
+### 10. Complete System Flow
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    PROCESO COMPLETO                       │
+│                    COMPLETE PROCESS                       │
 └──────────────────────────────────────────────────────────┘
 
-1. INBOUND (Entrada):
-   ├─ Operador coloca tote vacío
-   ├─ Presiona START
-   ├─ Sistema dispensa HIELO → 30 kg
-   ├─ Sistema llena AGUA → 50 kg
-   ├─ Operador ingresa ID: "TOTE001"
-   ├─ POST /api/totes (crea registro)
-   └─ Tote listo para salida
+1. INBOUND (Entry):
+   ├─ Operator places empty tote
+   ├─ Presses START
+   ├─ System dispenses ICE → 30 kg
+   ├─ System fills WATER → 50 kg
+   ├─ Operator enters ID: "TOTE001"
+   ├─ POST /api/totes (creates record)
+   └─ Tote ready for output
 
-2. BACKEND (Almacenamiento):
+2. BACKEND (Storage):
    ├─ Tote ID: TOTE001
    ├─ tote_kg: 100
    ├─ water_kg: 50
@@ -212,54 +212,54 @@ HTTP Response code: 201
    ├─ water_out_kg: 0
    └─ temp_out: null
 
-3. OUTBOUND (Salida):
-   ├─ Tote con pescado llega a báscula
-   ├─ Sistema detecta peso (200 kg fish)
-   ├─ Dispensa HIELO → 20 kg
-   ├─ Llena AGUA → 40 kg
-   ├─ Operador ingresa ID: "TOTE001"
-   ├─ GET /api/totes/TOTE001 (valida existencia)
-   ├─ PUT /api/totes/TOTE001 (actualiza)
-   └─ Tote completo
+3. OUTBOUND (Output):
+   ├─ Tote with fish arrives at scale
+   ├─ System detects weight (200 kg fish)
+   ├─ Dispenses ICE → 20 kg
+   ├─ Fills WATER → 40 kg
+   ├─ Operator enters ID: "TOTE001"
+   ├─ GET /api/totes/TOTE001 (validates existence)
+   ├─ PUT /api/totes/TOTE001 (updates)
+   └─ Tote complete
 
-4. BACKEND (Actualizado):
+4. BACKEND (Updated):
    ├─ Tote ID: TOTE001
    ├─ tote_kg: 100
    ├─ water_kg: 50
    ├─ ice_kg: 30
-   ├─ fish_kg: 200        ← actualizado
+   ├─ fish_kg: 200        ← updated
    ├─ raw_kg: 180
-   ├─ ice_out_kg: 20      ← actualizado
-   ├─ water_out_kg: 40    ← actualizado
-   └─ temp_out: 0.0       ← actualizado
+   ├─ ice_out_kg: 20      ← updated
+   ├─ water_out_kg: 40    ← updated
+   └─ temp_out: 0.0       ← updated
 ```
 
-### 11. Archivos Modificados
+### 11. Modified Files
 
-- `include/config.h` - Agregado configuración del backend
-- `src/main.h` - Agregado includes HTTP y declaraciones
-- `src/main.cpp` - Completa reestructuración:
-  - Nuevo `handleToteState()`
-  - Intercambio de stages (hielo/agua)
-  - Nuevas funciones: `onIDLE()`, `onWaitingToteID()`, `onCanceled()`
-  - Nueva función: `createToteInBackend()`
-  - Actualizado: `onStart()`, `onStop()`, `destroyStage3()`
-- `src/hardware/Controller.h` - Removido `WAITING_START` del enum
+- `include/config.h` - Added backend configuration
+- `src/main.h` - Added HTTP includes and declarations
+- `src/main.cpp` - Complete restructure:
+  - New `handleToteState()`
+  - Stage swap (ice/water)
+  - New functions: `onIDLE()`, `onWaitingToteID()`, `onCanceled()`
+  - New function: `createToteInBackend()`
+  - Updated: `onStart()`, `onStop()`, `destroyStage3()`
+- `src/hardware/Controller.h` - Removed `WAITING_START` from enum
 
-### 12. Dependencias
+### 12. Dependencies
 
-Ya incluidas en `platformio.ini`:
+Already included in `platformio.ini`:
 ```ini
 lib_deps = 
     bblanchon/ArduinoJson@6.20.0
 ```
 
-`HTTPClient.h` es parte del framework ESP32.
+`HTTPClient.h` is part of the ESP32 framework.
 
-### 13. Próximos Pasos
+### 13. Next Steps
 
-- [ ] Probar integración completa inbound → backend → outbound
-- [ ] Verificar que los datos se persistan correctamente
-- [ ] Implementar manejo de errores de red más robusto
-- [ ] Agregar indicadores LED de estado
-- [ ] Implementar cola offline si backend no está disponible
+- [ ] Test complete integration inbound → backend → outbound
+- [ ] Verify data persists correctly
+- [ ] Implement more robust network error handling
+- [ ] Add LED status indicators
+- [ ] Implement offline queue if backend is unavailable
