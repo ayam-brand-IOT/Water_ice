@@ -281,7 +281,7 @@ void destroyStage1() {
   Serial.print(ice_kg);
   Serial.println(" kg");
 
-  tote.ice_kg = ice_kg - tote.tote_kg;
+  tote.ice_kg = ice_kg - tote.initial_weight;  // Solo el hielo (TARE ya eliminó el peso del tote)
 
   stopICEPump();
 
@@ -299,7 +299,7 @@ void destroyStage2() {
   Serial.print(water_out_kg);
   Serial.println(" kg");
 
-  tote.water_kg = water_out_kg - tote.tote_kg - tote.ice_kg;
+  tote.water_kg = water_out_kg - tote.initial_weight - tote.ice_kg;  // Solo restar el hielo
 
   controller.writeDigitalOutput(WATER_PUMP, LOW);
 

@@ -50,7 +50,7 @@
 // #define U_PASS "cfpptest"
 
 // ##################### BACKEND API #####################
-#define BACKEND_HOST "192.168.100.62"  // Cambiar a la IP del backend
+#define BACKEND_HOST "192.168.100.70"  // Cambiar a la IP del backend
 #define BACKEND_PORT 3000  // Puerto directo del backend Node.js (sin nginx)
 #define BACKEND_WS_PORT 3001
 #define BACKEND_URL "http://" BACKEND_HOST ":3000"  // Conexión directa al backend
