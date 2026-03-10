@@ -22,34 +22,34 @@
 #define WATER_PUMP              DO_2
 
 
-// #################### MAREL - INFO ####################
-// Datos del servidor Marel
-#define SERVER_PORT             52200
-#define SERVER_IP               "192.168.100.72"
-#define CLIENT_IP               {192, 168, 100, 29}
-#define CLIENT_GATEWAY          {192, 168, 1, 254}       
-#define MAC_ADDRESS             { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
+// // #################### MAREL - INFO ####################
+// // Datos del servidor Marel
+// #define SERVER_PORT             52200
+// #define SERVER_IP               "192.168.100.72"
+// #define CLIENT_IP               {192, 168, 100, 29}
+// #define CLIENT_GATEWAY          {192, 168, 1, 254}       
+// #define MAC_ADDRESS             { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
 
 
 //Configuración de red
 #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
-#define IP_ADDRESS { 192, 168, 99, 243 }
-#define GATEWAY_ADDRESS { 192, 168, 99, 253 }
+#define IP_ADDRESS { 192, 168, 100, 29 }
+#define GATEWAY_ADDRESS { 192, 168, 100, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 //TURN ON THE STATIC IP
 
 
-#define U_SSID "MFP-Guest24"
-#define U_PASS "testing123"
+// #define U_SSID "MFP-Guest24"
+// #define U_PASS "testing123"
 
 // #define U_SSID "Pez Gordo"
 // #define U_PASS "SardinaMacarena2021"
 
-// #define U_SSID "CFPP (Test)"
-// #define U_PASS "cfpptest"
+#define U_SSID "CFPP-Iot"
+#define U_PASS ""
 
 // ##################### BACKEND API #####################
-#define BACKEND_HOST "192.168.100.70"  // Cambiar a la IP del backend
+#define BACKEND_HOST "192.168.100.25"  // Cambiar a la IP del backend
 #define BACKEND_PORT 3000  // Puerto directo del backend Node.js (sin nginx)
 #define BACKEND_WS_PORT 3001
 #define BACKEND_URL "http://" BACKEND_HOST ":3000"  // Conexión directa al backend

@@ -94,7 +94,10 @@ void Controller::task(){
 }
 
 void Controller::setUpDigitalOutputs(){
-  for (auto &output : outputs) pinMode(output, OUTPUT);
+  for (auto &output : outputs) {
+    pinMode(output, OUTPUT);
+    digitalWrite(output, LOW); // Asegura que los outputs inicien en LOW
+  }
 }
 
 void Controller::setUpRTC(){
