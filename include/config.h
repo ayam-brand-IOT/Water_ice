@@ -33,18 +33,17 @@
 
 //Configuración de red
 #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
-#define IP_ADDRESS { 192, 168, 100, 129 }
-#define GATEWAY_ADDRESS { 192, 168, 100, 254 }
+#define IP_ADDRESS { 192, 168, 99, 243 }
+#define GATEWAY_ADDRESS { 192, 168, 99, 253 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
-
 //TURN ON THE STATIC IP
 
 
-// #define U_SSID "MFP-Guest24"
-// #define U_PASS "testing123"
+#define U_SSID "MFP-Guest24"
+#define U_PASS "testing123"
 
-#define U_SSID "Pez Gordo"
-#define U_PASS "SardinaMacarena2021"
+// #define U_SSID "Pez Gordo"
+// #define U_PASS "SardinaMacarena2021"
 
 // #define U_SSID "CFPP (Test)"
 // #define U_PASS "cfpptest"
