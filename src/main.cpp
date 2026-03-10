@@ -4,6 +4,7 @@ Scheduler runner;
 Controller controller;
 TaskHandle_t detached_task;
 ToteWebSocketClient wsClient;  // WebSocket client instance
+BLEQRClient bleQRClient;       // BLE Central – connects to QR-Reader peripheral
 
 // Function prototypes
 void startICEPump();
@@ -87,6 +88,16 @@ void setup() {
   wsClient.begin(BACKEND_HOST, BACKEND_WS_PORT, "/esp32");
   wsClient.setMessageCallback(onWebSocketMessage);
 
+  // Initialize BLE QR client – scans for "QR-Reader" peripheral
+  bleQRClient.begin([](const String& qr) {
+    if (qr == "NO_QR") {
+      Serial.println("[BLE-QR] No QR in reader buffer yet");
+      return;
+    }
+    Serial.printf("[BLE-QR] QR received via BLE: %s\n", qr.c_str());
+    setToteIdFromUI(qr);
+  });
+
   xTaskCreatePinnedToCore(communicationTask, "communicationTask", 12000, NULL, 1, &detached_task, 0);
 
   runner.init();
@@ -107,6 +118,7 @@ void loop() {
   delay(20);
   controller.task();  // Process Modbus communication
   wsClient.loop();     // Process WebSocket communication
+  bleQRClient.loop();  // Drive BLE scan / connect state machine
   runner.execute();
   handleToteState();
 }
@@ -478,22 +490,35 @@ void onIDLE() {
 
 void onWaitingToteID() {
   static uint32_t lastPrompt = 0;
-  
+
   // Show prompt every 3 seconds
   if (millis() - lastPrompt > 3000) {
+    const bool bleReady = bleQRClient.isConnected();
     Serial.println("\n╔════════════════════════════════════╗");
-    Serial.println("║   WAITING FOR TOTE ID FROM UI      ║");
+    Serial.println("║   WAITING FOR TOTE ID              ║");
     Serial.println("╠════════════════════════════════════╣");
     Serial.println("║ Tote:  " + String(tote.tote_kg) + " kg");
     Serial.println("║ Ice:   " + String(tote.ice_kg) + " kg");
     Serial.println("║ Water: " + String(tote.water_kg) + " kg");
     Serial.println("╠════════════════════════════════════╣");
-    Serial.println("║ Enter Tote ID via web interface   ║");
+    if (bleReady) {
+      Serial.println("║ [BLE]  QR-Reader conectado ✓       ║");
+      Serial.println("║        Leyendo QR automáticamente  ║");
+    } else {
+      Serial.println("║ [BLE]  QR-Reader no conectado      ║");
+    }
+    Serial.println("║ [WEB]  Captura con cámara del tel  ║");
     Serial.println("╚════════════════════════════════════╝\n");
+
+    // If BLE reader is connected, request the buffered QR every 3 s
+    if (bleReady) {
+      bleQRClient.requestQR();
+    }
+
     lastPrompt = millis();
   }
-  
-  // Transition to COMPLETED is done from setToteIdFromUI
+
+  // Transition to COMPLETED is handled by setToteIdFromUI() (BLE or web path)
 }
 
 void onCanceled() {
