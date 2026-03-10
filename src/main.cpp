@@ -78,9 +78,10 @@ void stopICEPump() {
 }
 
 void setup() {
-  for (auto &b : buttons) b.button.begin();
-
+  // Inicializar controller PRIMERO (configura outputs antes que Serial)
   controller.init();
+  
+  for (auto &b : buttons) b.button.begin();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
   controller.connectToWiFi(/* web_server */ false, /* web_serial */ true, /* OTA */ true);
   

@@ -17,8 +17,8 @@
 #define MANUAL_WATER_IO         DI_2
 
 // ###################### OUTPUTS ######################
-#define ICE_PUMP                DO_0
-#define ICE_STOP                DO_1
+#define ICE_PUMP                DO_1
+#define ICE_STOP                DO_0
 #define WATER_PUMP              DO_2
 
 
@@ -33,7 +33,7 @@
 
 //Configuración de red
 #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
-#define IP_ADDRESS { 192, 168, 100, 29 }
+#define IP_ADDRESS { 192, 168, 100, 42 }
 #define GATEWAY_ADDRESS { 192, 168, 100, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 //TURN ON THE STATIC IP

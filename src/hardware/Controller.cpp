@@ -14,9 +14,10 @@ void Controller::init(){
 }
 
 void Controller::setUpIOS(){
-  Serial.begin(115200);
-
+  // Inicializar outputs PRIMERO para evitar estados indefinidos durante boot
   setUpDigitalOutputs();
+  
+  Serial.begin(115200);
 }
 
 void Controller::setUpI2C(){
