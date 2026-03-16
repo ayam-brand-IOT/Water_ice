@@ -7,10 +7,18 @@ MarelClient marel(1, 18, 17, 8);
 
 
 void Controller::init(){
+  // resetStrapedpins();
   setUpIOS();
   // setUpI2C();
   setUpDevice();
   // setUpRTC();
+}
+
+void Controller::resetStrapedpins() {
+  // Asegura que los pines strap de la EdgeBox estén en estado conocido (INPUT con pull-down)
+    gpio_reset_pin(GPIO_NUM_40);  // DO_0
+    gpio_reset_pin(GPIO_NUM_39);  // DO_1
+    gpio_reset_pin(GPIO_NUM_38);  // DO_2
 }
 
 void Controller::setUpIOS(){

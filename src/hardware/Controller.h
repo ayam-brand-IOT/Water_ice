@@ -9,6 +9,7 @@
 #include "marel.h"
 #include "WIFI.h"
 #include "Types.h"
+#include "driver/gpio.h"  // ESP-IDF, o simplemente pinMode() en Arduino
 #include <Preferences.h>
 #include "EdgeBox_ESP_100.h"
 
@@ -53,11 +54,12 @@ private:
     EdgeBox_ESP_100 edgebox;
     ControllerState state = IDLE;
 
-    const uint8_t outputs[2] = {WATER_PUMP, ICE_PUMP};
+    const uint8_t outputs[3] = {WATER_PUMP, ICE_PUMP, ICE_STOP}; // Agregado ICE_STOP a los outputs para controlarlo también
 
     void setUpIOS();
     void setUpI2C();
     void setUpDevice();
+    void resetStrapedpins();
     void setUpDigitalInputs();
     void setUpDigitalOutputs();
 

@@ -83,7 +83,7 @@ void setup() {
   
   for (auto &b : buttons) b.button.begin();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
-  controller.connectToWiFi(/* web_server */ false, /* web_serial */ true, /* OTA */ true);
+  controller.connectToWiFi(/* web_server */ true, /* web_serial */ true, /* OTA */ true);
   
   // Initialize WebSocket client
   wsClient.begin(BACKEND_HOST, BACKEND_WS_PORT, "/esp32");
@@ -111,7 +111,10 @@ void setup() {
   buttons_routine.enable();
   broadcast_weight_routine.enable();
 
-  delay(1000);
+  controller.writeDigitalOutput(ICE_STOP, HIGH);
+  delay(1200);
+  controller.writeDigitalOutput(ICE_STOP, LOW);
+
   Serial.println("Starting...");
 }
 
