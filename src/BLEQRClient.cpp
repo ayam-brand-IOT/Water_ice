@@ -73,7 +73,13 @@ void BLEQRClient::loop() {
       break;
 
     case BLEQRState::CONNECTED:
-      // Active – nothing to do; notifications drive the callback.
+      // Enviar ACK pendiente desde loop(), nunca desde el callback BLE
+      // (escribir desde un callback del stack BLE puede causar deadlock)
+      if (_pendingAck && _pReqChar) {
+        _pReqChar->writeValue("ACK", false);
+        _pendingAck = false;
+        Serial.println("[BLE-QR] ACK enviado al periférico");
+      }
       break;
 
     case BLEQRState::LOST:
@@ -109,14 +115,17 @@ void BLEQRClient::_onFound(BLEAdvertisedDevice* device) {
 void BLEQRClient::_onNotify(uint8_t* pData, size_t length) {
   String value((char*)pData, length);
   Serial.printf("[BLE-QR] Notification received: %s\n", value.c_str());
-  if (_callback) _callback(value);
+  if (_callback && _callback(value)) {
+    _pendingAck = true;  // callback procesó exitosamente → ACK en loop()
+  }
 }
 
 void BLEQRClient::_onDisconnect() {
   Serial.println("[BLE-QR] Peripheral disconnected");
-  _pDataChar = nullptr;
-  _pReqChar  = nullptr;
-  _state     = BLEQRState::LOST;
+  _pDataChar  = nullptr;
+  _pReqChar   = nullptr;
+  _pendingAck = false;  // descartar ACK pendiente si se cayó la conexión
+  _state      = BLEQRState::LOST;
   _lastScanMs = millis();
 }
 

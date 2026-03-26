@@ -8,10 +8,21 @@ MarelClient marel(1, 18, 17, 8);
 
 void Controller::init(){
   // resetStrapedpins();
-  setUpIOS();
+  Serial.begin(115200);
+  // setUpIOS();
   // setUpI2C();
   setUpDevice();
   // setUpRTC();
+}
+
+void Controller::setupPinMode( uint8_t pin, gpio_mode_t mode){
+  gpio_config_t io_conf = {};
+  io_conf.intr_type    = GPIO_INTR_DISABLE;
+  io_conf.mode         = mode;
+  io_conf.pin_bit_mask = (1ULL << pin);
+  io_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+  io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+  gpio_config(&io_conf);
 }
 
 void Controller::resetStrapedpins() {
@@ -25,7 +36,6 @@ void Controller::setUpIOS(){
   // Inicializar outputs PRIMERO para evitar estados indefinidos durante boot
   setUpDigitalOutputs();
   
-  Serial.begin(115200);
 }
 
 void Controller::setUpI2C(){
@@ -102,11 +112,11 @@ void Controller::task(){
   marel.task();
 }
 
-void Controller::setUpDigitalOutputs(){
-  for (auto &output : outputs) {
-    pinMode(output, OUTPUT);
-    digitalWrite(output, LOW); // Asegura que los outputs inicien en LOW
-  }
+void Controller::setUpDigitalOutputs() {
+    for (auto &output : outputs) {
+        setupPinMode(output, GPIO_MODE_OUTPUT);
+        gpio_set_level((gpio_num_t)output, LOW); // Asegura que inicien en LOW
+    }
 }
 
 void Controller::setUpRTC(){
@@ -118,11 +128,11 @@ bool Controller::isRTCConnected(){
 }
 
 bool Controller::readDigitalInput(uint8_t input){
-  return digitalRead(input);
+  return gpio_get_level((gpio_num_t)input);
 }
 
 void Controller::writeDigitalOutput(uint8_t output, uint8_t value){
-  return digitalWrite(output, value);
+  gpio_set_level((gpio_num_t)output, value);
 }
 
 void Controller::broadcastWeight(float weight){

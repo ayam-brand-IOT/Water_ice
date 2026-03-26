@@ -40,9 +40,10 @@ bool MarelClient::isConnected() {
 }
 
 float MarelClient::registersToFloat(uint16_t reg0, uint16_t reg1) {
-    // CDAB word order, raw value is directly in kg (no scaling needed)
-    int32_t raw = ((int32_t)reg1 << 16) | reg0;
-    float result = (float)raw;
+    // CDAB word order - usar uint32_t como intermediario para preservar sign two's complement
+    uint32_t uraw = ((uint32_t)reg1 << 16) | (uint32_t)reg0;
+    int32_t  raw  = (int32_t)uraw;          // reinterpret como signed
+    float result  = (float)raw;
     Serial.printf("  [Marel] Regs[%04X, %04X] raw=%ld → %.2f kg\n", reg0, reg1, raw, result);
     return result;
 }

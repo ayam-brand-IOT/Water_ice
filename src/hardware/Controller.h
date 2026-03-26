@@ -56,21 +56,21 @@ private:
 
     const uint8_t outputs[3] = {WATER_PUMP, ICE_PUMP, ICE_STOP}; // Agregado ICE_STOP a los outputs para controlarlo también
 
-    void setUpIOS();
     void setUpI2C();
     void setUpDevice();
     void resetStrapedpins();
     void setUpDigitalInputs();
     void setUpDigitalOutputs();
-
-
-public:
+    
+    
+    public:
     // ~Controller();
     // Controller(/* args */);
     WIFI wifi;
-
+    
     void init();
     bool setTare();
+    void setUpIOS();
     void setUpRTC();
     void task();  // Process Modbus communication
     
@@ -83,6 +83,7 @@ public:
     ControllerState getState();
     void setState(ControllerState state);
     bool readDigitalInput(uint8_t input);
+    void setupPinMode( uint8_t pin, gpio_mode_t mode);
     void writeDigitalOutput(uint8_t output, uint8_t value);
     void connectToWiFi(bool web_server, bool web_serial, bool OTA);
     void setUpWiFi(const char* ssid, const char* password, const char* hostname);

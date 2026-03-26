@@ -35,7 +35,7 @@ enum class BLEQRState {
 
 class BLEQRClient {
 public:
-  using QRCallback = std::function<void(const String&)>;
+  using QRCallback = std::function<bool(const String&)>;  // true = QR procesado → enviar ACK
 
   /**
    * Call once in setup(). Safe to call even if BLEDevice::init() was already
@@ -78,8 +78,9 @@ private:
   BLEQRState  _state       = BLEQRState::IDLE;
   QRCallback  _callback;
 
-  String      _serverAddress;           // found during scan
-  bool        _foundDevice   = false;   // scan found the target
+  String      _serverAddress;
+  bool        _foundDevice   = false;
+  bool        _pendingAck    = false;  // true = enviar ACK en el próximo loop()
   uint32_t    _lastScanMs    = 0;
-  static const uint32_t SCAN_INTERVAL_MS = 8000;  // re-scan every 8 s after lost
+  static const uint32_t SCAN_INTERVAL_MS = 8000;
 };
