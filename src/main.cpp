@@ -1,4 +1,5 @@
 #include "main.h"
+#include "Settings.h"
 
 Scheduler runner;
 Controller controller;
@@ -11,6 +12,7 @@ extern bool early_init_ran;
 // Function prototypes
 void startICEPump();
 void stopICEPump();
+void onSettlingIce();
 
 // Stages
 Stage stage_1(2, initStage1, destroyStage1);
@@ -74,6 +76,9 @@ Task indicator_task(250, TASK_FOREVER, []() {
     case ToteState::DISPENSING_WATER:
       ind1 = (tick % 2) ? HIGH : LOW;          // Parpadeo rápido 500 ms
       break;
+    case ToteState::SETTLING_ICE:
+      ind1 = (tick % 4 < 2) ? HIGH : LOW;     // Parpadeo medio 1 s (bomba apagada, asentando)
+      break;
     case ToteState::WAITING_TOTE_ID:
       ind1 = (tick % 8 < 4) ? HIGH : LOW;     // Parpadeo lento 1 s
       break;
@@ -132,6 +137,7 @@ void stopICEPump() {
 void setup() {
   // Inicializar controller PRIMERO (configura outputs antes que Serial)
   controller.init();
+  Settings::load();  // Load persisted ice/water/min-weight targets from NVS
   
   for (auto &b : buttons) b.button.begin();
   controller.setUpWiFi(U_SSID, U_PASS, "tote-inbound");
@@ -198,6 +204,10 @@ void handleToteState(){
       onIceFilling();
       break;
 
+    case ToteState::SETTLING_ICE:
+      onSettlingIce();
+      break;
+
     case ToteState::DISPENSING_WATER:
       onWaterFilling();
       break;
@@ -244,19 +254,19 @@ void onWaterFilling() {
   else if (stage_2.getCurrentStep() == 1){
     const float current_weight = controller.getWeight();
     const float weight_delta = current_weight - tote.initial_weight;  // Calculate delta
-    const float target_total = TARGET_ICE_KG + TARGET_WATER_KG;
+    const float target_total = Settings::getTargetIceKg() + Settings::getTargetWaterKg();
     
     if (weight_delta < target_total) {
       // Target weight not reached yet
       static uint32_t lastPrint = 0;
       if (millis() - lastPrint > 500) {
-        Serial.printf("Water: %.2f / %.2f kg (Total: %.2f)\r", weight_delta - TARGET_ICE_KG, TARGET_WATER_KG, weight_delta);
+        Serial.printf("Water: %.2f / %.2f kg (Total: %.2f)\r", weight_delta - Settings::getTargetIceKg(), Settings::getTargetWaterKg(), weight_delta);
         lastPrint = millis();
       }
       return;
     }
     Serial.println();
-    Serial.printf("✓ Target water weight reached: %.2f kg (Total: %.2f kg)\n", weight_delta - TARGET_ICE_KG, weight_delta);
+    Serial.printf("✓ Target water weight reached: %.2f kg (Total: %.2f kg)\n", weight_delta - Settings::getTargetIceKg(), weight_delta);
     stage_2.nextStep();
   }
 
@@ -281,11 +291,11 @@ void onIceFilling() {
     const float current_weight = controller.getWeight();
     const float weight_delta = current_weight - tote.initial_weight;  // Calculate delta
     
-    if (weight_delta < TARGET_ICE_KG) {
+    if (weight_delta < Settings::getTargetIceKg()) {
       // Target weight not reached yet
       static uint32_t lastPrint = 0;
       if (millis() - lastPrint > 500) {
-        Serial.printf("Ice: %.2f / %.2f kg\r", weight_delta, TARGET_ICE_KG);
+        Serial.printf("Ice: %.2f / %.2f kg\r", weight_delta, Settings::getTargetIceKg());
         lastPrint = millis();
       }
       return;
@@ -297,7 +307,21 @@ void onIceFilling() {
 
   if (stage_1.getCurrentStep() == 2) {
     stage_1.destroy();
-    // After ice, fill water
+    // Pause before water: let residual ice finish falling
+    toteState = ToteState::SETTLING_ICE;
+    Serial.println("Transitioning to SETTLING_ICE (5 s debounce)");
+  }
+}
+
+void onSettlingIce() {
+  static uint32_t settleStart = 0;
+  if (settleStart == 0) {
+    settleStart = millis();
+    wsClient.sendStateChange("SETTLING_ICE");
+    Serial.println("Settling: waiting 5 s for residual ice to stop falling...");
+  }
+  if (millis() - settleStart >= 5000UL) {
+    settleStart = 0;  // reset for next cycle
     toteState = ToteState::DISPENSING_WATER;
     Serial.println("Transitioning to DISPENSING_WATER");
   }
@@ -451,7 +475,7 @@ void onStart() {
 
   const uint16_t current_weight = controller.getWeight();
 
-  if(current_weight < MIN_WEIGHT) {
+  if(current_weight < Settings::getMinWeight()) {
     Serial.println("Weight is too low to start");
     return;
   }
@@ -703,5 +727,20 @@ void onWebSocketMessage(String type, JsonDocument& doc) {
       toteState = ToteState::CANCELED;
       wsClient.sendStateChange("CANCELED");
     }
+  }
+  else if (type == "update_settings") {
+    const float ice   = doc["ice_kg"]   | Settings::getTargetIceKg();
+    const float water = doc["water_kg"] | Settings::getTargetWaterKg();
+    const float minW  = doc["min_w"]    | Settings::getMinWeight();
+    Settings::save(ice, water, minW);
+    // Echo back the saved values so the browser panel can confirm
+    wsClient.sendSettingsCurrent(ice, water, minW);
+  }
+  else if (type == "get_settings") {
+    wsClient.sendSettingsCurrent(
+      Settings::getTargetIceKg(),
+      Settings::getTargetWaterKg(),
+      Settings::getMinWeight()
+    );
   }
 }
