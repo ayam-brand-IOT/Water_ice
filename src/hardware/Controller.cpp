@@ -95,7 +95,7 @@ bool Controller::setTare(){
 
 float Controller::getWeight(){
   float weight = marel.getNetWeightKg(); // p.ej. "0.00" o "76.4" (peso neto = bruto - tara)
-  DEBUG_M(("Raw Weight: " + String(weight)).c_str());
+  // DEBUG_M(("Raw Weight: " + String(weight)).c_str());
 
   if (isnan(weight)) {
     DEBUG_M("Failed to get weight from Marel");
@@ -103,7 +103,6 @@ float Controller::getWeight(){
   }
 
   // Muestra con 2 decimales sí o sí
-  Serial.printf("Parsed Weight: %.2f\n", weight); // o Serial.println(val, 2);
   return weight;
 
 }

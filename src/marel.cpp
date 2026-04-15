@@ -92,7 +92,7 @@ float MarelClient::getNetWeightKg() {
     }
     
     float netWeight = registersToFloat(_netWeightRegs[0], _netWeightRegs[1]);
-    Serial.printf("Modbus Read NET: Regs[%04X, %04X] = %.2f kg\n", _netWeightRegs[0], _netWeightRegs[1], netWeight);
+    // Serial.printf("Modbus Read NET: Regs[%04X, %04X] = %.2f kg\n", _netWeightRegs[0], _netWeightRegs[1], netWeight);
     return netWeight;
 }
 
