@@ -1,4 +1,5 @@
 #include "Stage.h"
+#include "Debug.h"
 #include <Preferences.h>
 
 Stage::Stage(uint8_t no_steps, std::function<void ()> callback_init, std::function<void ()> callback_destroy) {
@@ -44,6 +45,7 @@ void Stage::destroy() {
 }
 
 void Stage::DEBUG_M(const char *message) {
+    if (!DEBUG_CTRL) return;
     char buffer[100];
     snprintf(buffer, sizeof(buffer), "[Stage]: %s", message);
     Serial.println(buffer);

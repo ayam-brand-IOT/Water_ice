@@ -5,10 +5,10 @@
 
 typedef struct {
   char id[ID_SIZE];
-  uint32_t water_kg;
-  uint32_t ice_kg;
-  uint32_t tote_kg;
-  uint32_t raw_kg;
+  float water_kg;
+  float ice_kg;
+  float tote_kg;
+  float raw_kg;
   float initial_weight;  // Peso inicial antes de dispensar (para calcular deltas sin TARE)
 } tote_data;
 

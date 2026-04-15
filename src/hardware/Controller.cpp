@@ -1,4 +1,5 @@
 #include "Controller.h"
+#include "../Debug.h"
 
 // Configuración Modbus RTU para RS-485
 // Pines: RX=IO18 (U1RXD), TX=IO17 (U1TXD), DE/RE=IO8 (RS485_RTS)
@@ -77,7 +78,7 @@ void Controller::setState(ControllerState state){
   this->state = state;
   toteState = ToteState::DISPENSING_ICE;
   
-  DEBUG_M(("State changed from " + String((int)this->state) + " to " + String((int)state)).c_str());
+  LOG_CTRL("State changed from %d to %d\n", (int)this->state, (int)state);
 }
 
 ControllerState Controller::getState(){
@@ -98,7 +99,7 @@ float Controller::getWeight(){
   // DEBUG_M(("Raw Weight: " + String(weight)).c_str());
 
   if (isnan(weight)) {
-    DEBUG_M("Failed to get weight from Marel");
+    LOG_ERR("Failed to get weight from Marel\n");
     return NAN;
   }
 

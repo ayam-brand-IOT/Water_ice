@@ -35,7 +35,7 @@ void readButtonTypeFromSerial();
 void communicationTask(void* pvParameters);
 
 // Backend API functions
-bool createToteInBackend(const char* toteId, uint32_t tote_kg, uint32_t water_kg, uint32_t ice_kg, uint32_t raw_kg);
+bool createToteInBackend(const char* toteId, float tote_kg, float water_kg, float ice_kg, float raw_kg);
 
 // WebSocket message handler
 void onWebSocketMessage(String type, JsonDocument& doc);

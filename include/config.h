@@ -40,18 +40,18 @@
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
 //TURN ON THE STATIC IP
 
-#define U_SSID "MFP-Guest24"
-#define U_PASS "testing123"
+// #define U_SSID "MFP-Guest24"
+// #define U_PASS "testing123"
 
 // #define U_SSID "Pez Gordo"
 // #define U_PASS "SardinaMacarena2021"
 
-// #define U_SSID "CFPP-Iot"
-// #define U_PASS ""
+#define U_SSID "CFPP-Iot"
+#define U_PASS ""
 
 // ##################### BACKEND API #####################
-// #define BACKEND_HOST "192.168.100.25"  // Cambiar a la IP del backend
-#define BACKEND_HOST "192.168.99.58"  // Cambiar a la IP del backend
+#define BACKEND_HOST "192.168.100.25"  // Cambiar a la IP del backend
+// #define BACKEND_HOST "192.168.99.58"  // Cambiar a la IP del backend
 
 #define BACKEND_PORT 3000  // Puerto directo del backend Node.js (sin nginx)
 #define BACKEND_WS_PORT 3001
