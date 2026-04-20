@@ -186,7 +186,7 @@ const char* INDEX_HTML = R"rawliteral(
       </div>
       <div class="container">
         <div class="card">
-          <div class="title">Ice and Water</div>
+          <div class="title">Ice Tote 🖕🖕</div>
           <div class="weight-label">Actual weight (kg)</div>
           <div id="weight" class="weight-value">{{WEIGHT}}</div>
           

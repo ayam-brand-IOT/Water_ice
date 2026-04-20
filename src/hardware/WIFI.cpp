@@ -6,21 +6,34 @@
 AsyncWebServer server(80);
 
 static void handle_update_progress_cb(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
-  if (!index){
+  static bool updateOk = false;
+
+  if (!index) {
+    updateOk = false;
     int cmd = (filename.indexOf("spiffs") > -1) ? U_SPIFFS : U_FLASH;
-    // Update.runAsync(true);
-    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+    size_t contentLen = request->contentLength();
+    if (!Update.begin(contentLen > 0 ? contentLen : UPDATE_SIZE_UNKNOWN, cmd)) {
       Update.printError(Serial);
+      return;
     }
+    updateOk = true;
+    LOG_WIFI("OTA update started: %s (%u bytes)\n", filename.c_str(), contentLen);
   }
+
+  if (!updateOk) return;
 
   if (Update.write(data, len) != len) {
     Update.printError(Serial);
+    updateOk = false;
+    return;
   }
 
   if (final) {
-    if (!Update.end(true)){
+    if (!Update.end(true)) {
       Update.printError(Serial);
+      updateOk = false;
+    } else {
+      LOG_WIFI("OTA update complete: %u bytes\n", index + len);
     }
   }
 }
@@ -163,6 +176,20 @@ void WIFI::setUpWebServer(bool brigeSerial){
     request->send(200, "text/plain", "Resetting...");
     ESP.restart();
   });
+  
+  server.on("/update", HTTP_POST, [&checkAuth]( AsyncWebServerRequest *request) {
+    if(!checkAuth(request)) return;
+    bool hasError = Update.hasError();
+    AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", hasError ? "FAIL" : "OK");
+    response->addHeader("Connection", "close");
+    request->send(response);
+    if (!hasError) {
+      request->onDisconnect([]() {
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        ESP.restart();
+      });
+    }
+  }, handle_update_progress_cb);
 
   ws.onEvent([](AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
                 void *arg, uint8_t *data, size_t len) {

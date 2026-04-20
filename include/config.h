@@ -24,17 +24,8 @@
 #define INDICATOR_2             DO_1
 
 
-// // #################### MAREL - INFO ####################
-// // Datos del servidor Marel
-// #define SERVER_PORT             52200
-// #define SERVER_IP               "192.168.100.72"
-// #define CLIENT_IP               {192, 168, 100, 29}
-// #define CLIENT_GATEWAY          {192, 168, 1, 254}       
-// #define MAC_ADDRESS             { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED }
-
-
 //Configuración de red
-// #define HAS_STATIC_IP                               //TURN ON THE STATIC IP
+#define HAS_STATIC_IP                               //TURN ON THE STATIC IP
 #define IP_ADDRESS { 192, 168, 100, 21 }
 #define GATEWAY_ADDRESS { 192, 168, 100, 254 }
 #define SUBNET_ADDRESS { 255, 255, 255, 0 }
@@ -50,7 +41,7 @@
 #define U_PASS ""
 
 // ##################### BACKEND API #####################
-#define BACKEND_HOST "192.168.100.25"  // Cambiar a la IP del backend
+#define BACKEND_HOST "10.20.30.100"  // Cambiar a la IP del backend
 // #define BACKEND_HOST "192.168.99.58"  // Cambiar a la IP del backend
 
 #define BACKEND_PORT 3000  // Puerto directo del backend Node.js (sin nginx)

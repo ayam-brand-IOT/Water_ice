@@ -254,19 +254,17 @@ void onWaterFilling() {
 
   else if (stage_2.getCurrentStep() == 1){
     const float current_weight = controller.getWeight();
-    const float weight_delta = current_weight - tote.initial_weight;  // Calculate delta
-    const float target_total = tote.ice_kg + Settings::getTargetWaterKg();
     
-    if (weight_delta < target_total) {
+    if (current_weight < Settings::getTargetWaterKg()) {
       // Target weight not reached yet
       static uint32_t lastPrint = 0;
       if (millis() - lastPrint > 500) {
-        LOG_MAIN("Water: %.2f / %.2f kg (Total: %.2f)\r", weight_delta - tote.ice_kg, Settings::getTargetWaterKg(), weight_delta);
+        LOG_MAIN("Water: %.2f / %.2f kg\r", current_weight, Settings::getTargetWaterKg());
         lastPrint = millis();
       }
       return;
     }
-    LOG_MAIN("\u2713 Target water weight reached: %.2f kg (Total: %.2f kg)\n", weight_delta - tote.ice_kg, weight_delta);
+    LOG_MAIN("\u2713 Target water weight reached: %.2f kg\n", current_weight);
     stage_2.nextStep();
   }
 
@@ -289,18 +287,18 @@ void onIceFilling() {
 
   else if (stage_1.getCurrentStep() == 1){
     const float current_weight = controller.getWeight();
-    const float weight_delta = current_weight - tote.initial_weight;  // Calculate delta
+
     
-    if (weight_delta < Settings::getTargetIceKg()) {
+    if (current_weight < Settings::getTargetIceKg()) {
       // Target weight not reached yet
       static uint32_t lastPrint = 0;
       if (millis() - lastPrint > 500) {
-        LOG_MAIN("Ice: %.2f / %.2f kg\r", weight_delta, Settings::getTargetIceKg());
+        LOG_MAIN("Ice: %.2f / %.2f kg\r", current_weight, Settings::getTargetIceKg());
         lastPrint = millis();
       }
       return;
     }
-    LOG_MAIN("\u2713 Target ice weight reached: %.2f kg\n", weight_delta);
+    LOG_MAIN("\u2713 Target ice weight reached: %.2f kg\n", current_weight);
     stage_1.nextStep();
   }
 
@@ -324,7 +322,7 @@ void onSettlingIce() {
     const float ice_settled = controller.getWeight();
     LOG_MAIN("Ice dispensed: %.2f kg\n", ice_settled);
 
-    tote.ice_kg = ice_settled - tote.initial_weight;  // Solo el hielo (TARE ya eliminó el peso del tote)
+    tote.ice_kg = ice_settled;  // Solo el hielo (TARE ya eliminó el peso del tote)
 
     // Send ice dispensed value to frontend
     wsClient.sendIceDispensed(tote.ice_kg);
@@ -364,15 +362,16 @@ void onButtonPressed() {
 void initStage1() {
   LOG_MAIN("\n=== Stage 1: Dispensing Ice ===\n");
   // Save initial weight to calculate delta (workaround if TARE doesn't work)
-  tote.initial_weight = controller.getWeight();
-  LOG_MAIN("Initial weight saved: %.2f kg\n", tote.initial_weight);
+  tote.tote_kg = controller.getWeight();
+  LOG_MAIN("Initial weight saved: %.2f kg\n", tote.tote_kg);
   controller.setTare();  // Try TARE anyway
   startICEPump();
 }
 
 void initStage2() {
   LOG_MAIN("\n=== Stage 2: Filling Water ===\n");
-  // Do NOT setTare here - we want to measure cumulative weight (ice + water)
+
+  controller.setTare();  // TARE again to zero after ice (if TARE works, initial_weight is ignored)
   controller.writeDigitalOutput(WATER_PUMP, HIGH);
 }
 
@@ -393,7 +392,7 @@ void destroyStage2() {
 
   LOG_MAIN("Water filled: %.2f kg\n", water_out_kg);
 
-  tote.water_kg = water_out_kg - tote.initial_weight - tote.ice_kg;  // Solo restar el hielo
+  tote.water_kg = water_out_kg;
 
   controller.writeDigitalOutput(WATER_PUMP, LOW);
 
@@ -466,10 +465,6 @@ void onStart() {
   }
 
   LOG_MAIN("\n=== System Started ===\n");
-  LOG_MAIN("Initial weight: %.2f kg\n", current_weight);
-  
-  tote.tote_kg = current_weight;
-  controller.setTare();
 
   // Start with ice dispensing
   toteState = ToteState::DISPENSING_ICE;
@@ -511,7 +506,7 @@ void readButtonTypeFromSerial() {
       handleInputs(static_cast<button_type>(buttonType));
     }
     else {
-      LOG_MAIN("Invalid button type. Please enter a number between 0 and 5.\n");
+      LOG_MAIN("Invalid Button Type. Please enter a number between 0 and 5.\n");
     }
   }
 }
@@ -565,7 +560,7 @@ void onWaitingToteID() {
     LOG_MAIN("\n╔════════════════════════════════════╗\n");
     LOG_MAIN("║   WAITING FOR TOTE ID              ║\n");
     LOG_MAIN("╠════════════════════════════════════╣\n");
-    LOG_MAIN("║ Tote:  %.2f kg\n", tote.initial_weight);
+    LOG_MAIN("║ Tote:  %.2f kg\n", tote.tote_kg);
     LOG_MAIN("║ Ice:   %.2f kg\n", tote.ice_kg);
     LOG_MAIN("║ Water: %.2f kg\n", tote.water_kg);
     LOG_MAIN("╠════════════════════════════════════╣\n");

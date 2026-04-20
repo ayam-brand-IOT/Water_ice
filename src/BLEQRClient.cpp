@@ -45,7 +45,7 @@ void BLEQRClient::begin(QRCallback cb) {
   _pClient = BLEDevice::createClient();
   _pClient->setClientCallbacks(new QRClientCallbacks());
 
-  Serial.println("[BLE-QR] Initialized – will scan for \"" BLEQR_DEVICE_NAME "\"");
+  Serial.println("[BLE-QR] :) Initialized - will scan for \"" BLEQR_DEVICE_NAME "\"");
   _startScan();
 }
 
