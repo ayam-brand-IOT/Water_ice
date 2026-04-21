@@ -71,6 +71,7 @@ private:
     
     void init();
     bool setTare();
+    void clearTare();
     void setUpIOS();
     void setUpRTC();
     void task();  // Process Modbus communication

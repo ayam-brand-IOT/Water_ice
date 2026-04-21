@@ -91,7 +91,15 @@ void Controller::setUpDevice(){
 
 bool Controller::setTare(){
   marel.setTare();
+  vTaskDelay(500/portTICK_RATE_MS);
+  // delay .5 secconds with v task
+
   return true;
+}
+
+void Controller::clearTare(){
+  marel.clearTare();
+  vTaskDelay(500/portTICK_RATE_MS);
 }
 
 float Controller::getWeight(){

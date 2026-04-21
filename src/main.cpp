@@ -433,7 +433,7 @@ void destroyStage3() {
   }
   
   // Reset the tare
-  controller.setTare();
+  controller.clearTare();
   
   // Clear data for next tote
   tote = {0, 0, 0, 0, 0};
